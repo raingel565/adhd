@@ -1,0 +1,1308 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Драконы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+:root{padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+[hidden]{display:none!important}
+
+/* Layout (online): home (role+gender, bot/room) → lobby/join → sticky glass scene + reaction → my panel + partner status → summary. Dark-only.
+   Previous: compact top bar → setup (gender) → sticky glass scene (landscape + heroes + dragons, HUD meters and speech bubbles inside) + one-line reaction → two glass panels with neon edge, pill tabs and icon-tile rows. Deliberately dark-only. */
+:root{
+  --bg:#0c0d11; --glass:rgba(44,47,56,.62); --glass-2:rgba(66,70,82,.5); --line:rgba(255,255,255,.09); --line-2:rgba(255,255,255,.16);
+  --text:#eef0f5; --muted:#9aa1ae;
+  --fire:#ff7a45; --pink:#ff4f9a; --ice:#38c6f4; --violet:#7c6cff;
+  --good:#3ee08f; --warn:#ffb84d; --bad:#ff6161;
+  --shadow:0 24px 48px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06);
+  --f:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{color:var(--text); font-family:var(--f); font-size:15px; line-height:1.45; min-height:100%;
+  background:
+    radial-gradient(50% 40% at 0% 100%, rgba(255,79,154,.16), transparent 70%),
+    radial-gradient(45% 40% at 100% 30%, rgba(56,198,244,.12), transparent 70%),
+    radial-gradient(40% 30% at 30% 0%, rgba(255,122,69,.10), transparent 70%),
+    var(--bg); background-attachment:fixed}
+body::before{content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); z-index:10; background:var(--bg)}
+.wrap{max-width:1100px; margin:0 auto; padding-block:16px 40px;
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px));
+  display:grid; gap:14px}
+.glass{background:var(--glass); border:1px solid var(--line); box-shadow:var(--shadow);
+  backdrop-filter:blur(22px) saturate(1.3); -webkit-backdrop-filter:blur(22px) saturate(1.3)}
+
+.bar{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
+.brand{display:flex; align-items:center; gap:12px; min-width:0}
+h1{margin:0; font-size:clamp(24px,3.4vw,32px); font-weight:800; letter-spacing:-.02em}
+.pill{font-size:13px; font-weight:600; color:var(--muted); padding:6px 12px; border-radius:999px; border:1px solid var(--line-2); white-space:nowrap}
+.icons{display:flex; gap:8px}
+.ibtn{width:40px; height:40px; border-radius:50%; display:grid; place-items:center; cursor:pointer; color:var(--text); border:1px solid var(--line-2); background:var(--glass-2)}
+.ibtn:hover{border-color:rgba(255,255,255,.3)}
+.ibtn svg{width:18px; height:18px}
+.cta{font:700 16px var(--f); color:#fff; border:0; border-radius:999px; padding:13px 28px; cursor:pointer;
+  background:linear-gradient(180deg,#ff7a5c,#f2513c); box-shadow:0 8px 24px rgba(242,81,60,.45), inset 0 1px 0 rgba(255,255,255,.35)}
+.cta:hover{filter:brightness(1.06)}
+:is(.cta,.ibtn,.row,.tab,.seg button,.btn):focus-visible{outline:2px solid var(--ice); outline-offset:2px}
+
+.setup{border-radius:26px; padding:22px; display:grid; gap:18px; justify-items:center; text-align:center}
+.setup h2{margin:0; font-size:20px; font-weight:800}
+.picks{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; width:100%; max-width:560px}
+.pick{border-radius:22px; padding:14px; display:grid; justify-items:center; gap:10px; background:rgba(255,255,255,.04); border:1px solid var(--line); position:relative; overflow:hidden}
+.pick::after{content:""; position:absolute; left:16px; right:16px; top:0; height:2px; border-radius:2px}
+.pick.fire::after{background:linear-gradient(90deg,var(--fire),var(--pink)); box-shadow:0 0 14px var(--pink)}
+.pick.ice::after{background:linear-gradient(90deg,var(--ice),var(--violet)); box-shadow:0 0 14px var(--ice)}
+.pick svg{width:min(150px,100%); height:auto}
+.pick .nm{font-weight:800}
+.seg{display:inline-flex; gap:4px; padding:4px; border-radius:999px; background:rgba(0,0,0,.3); border:1px solid var(--line)}
+.seg button{font:600 14px var(--f); border:0; background:transparent; color:var(--muted); padding:6px 16px; border-radius:999px; cursor:pointer}
+.seg button[aria-pressed="true"]{background:rgba(255,255,255,.12); color:var(--text); box-shadow:inset 0 1px 0 rgba(255,255,255,.1)}
+
+.stagebox{position:sticky; top:env(safe-area-inset-top,0px); z-index:5; padding-block:4px 6px; display:grid; gap:8px; background:linear-gradient(var(--bg) 85%, transparent)}
+.scene{position:relative; height:clamp(220px, 46vw, 42vh); border-radius:26px; overflow:hidden; border:1px solid var(--line-2); box-shadow:var(--shadow); background:#1b1f2b}
+.scene > svg,.scene > canvas{position:absolute; inset:0; width:100%; height:100%; display:block}
+.scene > canvas{pointer-events:none}
+.hud{position:absolute; top:10px; display:flex; align-items:center; gap:8px; padding:6px 10px 6px 6px; border-radius:16px; min-width:0; max-width:44%}
+.hud.fire{left:10px} .hud.ice{right:10px; flex-direction:row-reverse; padding:6px 6px 6px 10px}
+.hud .meta{display:grid; gap:4px; min-width:0}
+.hud .line{display:flex; align-items:baseline; gap:6px; font-size:12px; color:var(--muted); white-space:nowrap}
+.hud.ice .line{justify-content:flex-end}
+.hud .num{font-size:16px; font-weight:800; color:var(--text); font-variant-numeric:tabular-nums}
+.hud .trk{width:clamp(56px,12vw,120px); height:5px; border-radius:99px; background:rgba(255,255,255,.12); overflow:hidden}
+.hud.ice .trk{justify-self:end}
+.hud .fl{height:100%; border-radius:99px; transition:width .7s ease}
+.hud.fire .fl{background:linear-gradient(90deg,var(--fire),var(--pink)); box-shadow:0 0 10px var(--pink)}
+.hud.ice .fl{background:linear-gradient(90deg,var(--violet),var(--ice)); box-shadow:0 0 10px var(--ice)}
+.hud .st{font-weight:600}
+.hud .st.rec{color:var(--good)}
+.tile{width:34px; height:34px; border-radius:11px; display:grid; place-items:center; flex:none; color:#fff; box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 6px 14px rgba(0,0,0,.35)}
+.tile svg{width:18px; height:18px}
+.t-or{background:linear-gradient(160deg,#ffae5c,#ff6a2b)} .t-bl{background:linear-gradient(160deg,#5ab8ff,#2f6cf0)}
+.t-pk{background:linear-gradient(160deg,#ff7ce0,#d43fb0)} .t-pu{background:linear-gradient(160deg,#a48bff,#6a4be0)}
+.t-gr{background:linear-gradient(160deg,#58eb93,#1fb45d)} .t-te{background:linear-gradient(160deg,#4fe3e0,#119fb4)}
+.t-rd{background:linear-gradient(160deg,#ff8a7a,#e8433b)}
+.say{position:absolute; z-index:2; transform:translate(-50%,-100%); max-width:min(46%,280px); padding:8px 12px; border-radius:14px; font-size:13px; line-height:1.35;
+  background:rgba(18,20,26,.82); border:1px solid var(--line-2); color:var(--text); pointer-events:none; transition:opacity .3s; text-align:center;
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px)}
+.say::after{content:""; position:absolute; left:50%; bottom:-6px; width:10px; height:10px; transform:translateX(-50%) rotate(45deg); background:inherit; border-right:1px solid var(--line-2); border-bottom:1px solid var(--line-2)}
+.say.think{font-style:italic; color:#e6e1ff; background:rgba(58,50,108,.82); border:1px solid rgba(170,150,255,.5); border-radius:26px; padding:10px 15px;
+  transform:translate(-50%, calc(-100% - 20px)); box-shadow:0 0 18px rgba(124,108,255,.25)}
+.say.think::after{width:13px; height:13px; border-radius:50%; left:42%; bottom:-17px; transform:translateX(-50%); border:1px solid rgba(170,150,255,.5)}
+.say.think::before{content:""; position:absolute; width:7px; height:7px; border-radius:50%; left:37%; bottom:-28px; background:rgba(58,50,108,.82); border:1px solid rgba(170,150,255,.5)}
+.trait{font-size:12px; font-weight:600; color:var(--muted); padding:4px 10px; border-radius:999px; border:1px solid var(--line-2); margin-left:auto; white-space:nowrap}
+.intro{border-radius:22px; padding:16px 18px; display:grid; gap:10px}
+.intro h2{margin:0; font-size:18px; font-weight:800}
+.intro .who{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px}
+.intro .who p{margin:0; font-size:14px; color:#cfd4de; padding:10px 12px; border-radius:14px; background:rgba(255,255,255,.04); border:1px solid var(--line)}
+.intro .who b{display:block; font-size:13px; margin-bottom:2px}
+.intro .who .f b{color:#ffa07a} .intro .who .i b{color:#7fdcff}
+.intro .now{margin:0; font-size:14px; color:var(--muted)}
+.intro .go{justify-self:start; padding:10px 22px; font-size:15px}
+@media (max-width:760px){ .intro .who{grid-template-columns:minmax(0,1fr)} }
+.say.off{opacity:0}
+.react{border-radius:16px; padding:9px 12px; font-size:14px; display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; min-height:44px}
+.react .msg{flex:1 1 220px}
+.react .tag{font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px; white-space:nowrap; flex:none}
+.react .msg{color:var(--muted); min-width:0}
+.react.pop{animation:pop .35s ease-out}
+@keyframes pop{from{transform:translateY(4px); opacity:.4}to{transform:none; opacity:1}}
+.tag.bad{background:rgba(255,97,97,.16); color:#ff8f8f; box-shadow:inset 0 0 0 1px rgba(255,97,97,.35)}
+.tag.trap{background:rgba(255,184,77,.14); color:#ffc977; box-shadow:inset 0 0 0 1px rgba(255,184,77,.35)}
+.tag.key,.tag.good{background:rgba(62,224,143,.14); color:#6ff0ae; box-shadow:inset 0 0 0 1px rgba(62,224,143,.35)}
+.tag.inner{background:rgba(56,198,244,.14); color:#7fdcff; box-shadow:inset 0 0 0 1px rgba(56,198,244,.35)}
+.tag.info{background:rgba(255,255,255,.08); color:var(--muted)}
+.finale{position:absolute; inset:0; display:grid; place-items:center; padding:12px}
+.finale .card{max-width:400px; text-align:center; padding:18px 20px; border-radius:22px; display:grid; gap:8px; animation:pop .6s ease-out}
+.finale h2{margin:0; font-size:22px; font-weight:800}
+.finale p{margin:0; color:#c9ced8; font-size:14px}
+.btn{font:600 14px var(--f); color:var(--text); background:rgba(255,255,255,.08); border:1px solid var(--line-2); border-radius:999px; padding:9px 18px; cursor:pointer}
+
+.hin{transform-box:fill-box; transform-origin:50% 100%}
+.hin.throw{animation:throw .45s ease-out}
+@keyframes throw{35%{transform:translateY(-8px) rotate(-3deg)}}
+.hin.flinch{animation:flinch .55s ease-out}
+@keyframes flinch{25%{transform:translateX(-7px) rotate(3deg)}55%{transform:translateX(4px)}}
+.hin.relief{animation:relief .7s ease-out}
+@keyframes relief{40%{transform:scale(1.03,.97)}70%{transform:translateY(-4px)}}
+.hin.swap{animation:swapin .4s ease-out}
+@keyframes swapin{from{opacity:.35}to{opacity:1}}
+.flick{transform-box:fill-box; transform-origin:50% 100%; animation:flick 1.1s ease-in-out infinite alternate}
+@keyframes flick{to{transform:scaleY(1.12) scaleX(.94)}}
+.spin{transform-box:fill-box; transform-origin:50% 50%; animation:spin 9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.breathe{transform-box:fill-box; transform-origin:50% 100%; animation:breathe 3.4s ease-in-out infinite}
+@keyframes breathe{50%{transform:scaleY(1.012)}}
+
+.board{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; align-items:start; margin-top:6px}
+.panel{position:relative; border-radius:24px; padding:16px 14px 12px 18px; display:grid; gap:12px; min-width:0}
+.panel::before{content:""; position:absolute; left:-1px; top:22px; bottom:22px; width:3px; border-radius:3px}
+.panel.fire::before{background:linear-gradient(180deg,var(--fire),var(--pink)); box-shadow:0 0 16px var(--pink), 0 0 4px var(--fire)}
+.panel.ice::before{background:linear-gradient(180deg,var(--ice),var(--violet)); box-shadow:0 0 16px var(--ice), 0 0 4px var(--violet)}
+.ph{display:flex; align-items:center; gap:10px}
+.ph h3{margin:0; font-size:19px; font-weight:800}
+.tabs{display:flex; gap:6px; flex-wrap:wrap}
+.tab{position:relative; font:600 13.5px var(--f); color:var(--muted); background:transparent; border:1px solid var(--line-2); border-radius:999px; padding:7px 14px; cursor:pointer}
+.tab[aria-selected="true"]{color:var(--text); background:rgba(255,255,255,.08)}
+.tab[aria-selected="true"]::after{content:""; position:absolute; left:14px; right:14px; bottom:-1px; height:2px; border-radius:2px}
+.panel.fire .tab[aria-selected="true"]::after{background:linear-gradient(90deg,var(--fire),var(--pink)); box-shadow:0 0 8px var(--pink)}
+.panel.ice .tab[aria-selected="true"]::after{background:linear-gradient(90deg,var(--ice),var(--violet)); box-shadow:0 0 8px var(--ice)}
+.tab .new{display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--good); box-shadow:0 0 8px var(--good); margin-left:6px; vertical-align:1px}
+.list{display:grid}
+.row{display:flex; align-items:center; gap:12px; width:100%; text-align:left; font:600 14.5px var(--f); color:var(--text); background:transparent; border:0;
+  border-top:1px solid var(--line); padding:10px 4px; cursor:pointer; border-radius:0; transition:background .15s}
+.row:first-child{border-top:0}
+.row:hover:not(:disabled){background:rgba(255,255,255,.04)}
+.row .lbl{flex:1; min-width:0}
+.row .chev{color:var(--muted); font-size:18px; line-height:1}
+.row:disabled{opacity:.45; cursor:default}
+.row .ok{color:var(--good); font-size:12px; font-weight:700}
+.note{font-size:12.5px; color:var(--muted); text-align:center; margin:6px 0 0}
+
+@media (max-width:760px){
+  .board{grid-template-columns:minmax(0,1fr)}
+  .hud .st{display:none}
+  .tile{width:30px; height:30px; border-radius:10px} .tile svg{width:16px; height:16px}
+  .say{font-size:12px; padding:6px 9px}
+}
+@media (prefers-reduced-motion: reduce){
+  .hin.throw,.hin.flinch,.hin.relief,.hin.swap,.flick,.spin,.breathe,.react.pop,.finale .card{animation:none}
+  .hud .fl{transition:none}
+}
+
+.home{border-radius:26px; padding:22px; display:grid; gap:18px}
+.home h2,.lobby h2{margin:0; font-size:20px; font-weight:800}
+.home .lead{margin:-10px 0 0; color:var(--muted)}
+.roles{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px}
+.rolebtn{display:grid; justify-items:center; gap:8px; width:100%; background:transparent; border:0; color:var(--text); cursor:pointer; font:inherit; padding:0}
+.rolebtn:focus-visible{outline:2px solid var(--ice); outline-offset:4px; border-radius:16px}
+.pick{transition:border-color .2s, background .2s, transform .2s}
+.pick.sel{border-color:rgba(255,255,255,.35); background:rgba(255,255,255,.08); transform:translateY(-2px)}
+.pick .me{font-size:11px; font-weight:800; padding:3px 9px; border-radius:999px; background:var(--good); color:#0c0d11; margin-left:6px; vertical-align:2px; visibility:hidden}
+.pick.sel .me{visibility:visible}
+.modes{display:flex; flex-wrap:wrap; gap:10px; align-items:center}
+.join{display:flex; gap:8px; align-items:center; margin-left:auto}
+.code-in{font:700 16px var(--f); letter-spacing:.2em; text-transform:uppercase; width:120px; padding:10px 14px; border-radius:999px; border:1px solid var(--line-2); background:rgba(0,0,0,.3); color:var(--text)}
+.code-in:focus-visible{outline:2px solid var(--ice); outline-offset:2px}
+.err{margin:0; color:#ff8f8f; font-size:13.5px}
+.muted{color:var(--muted); margin:0}
+.lobby{border-radius:26px; padding:24px; display:grid; gap:14px; justify-items:center; text-align:center}
+.bigcode{font-size:clamp(40px,9vw,60px); font-weight:800; letter-spacing:.25em; padding-left:.25em; text-shadow:0 0 24px rgba(56,198,244,.45)}
+.linkrow{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; align-items:center; max-width:100%}
+.linkrow code{font-size:13px; padding:9px 12px; border-radius:12px; background:rgba(0,0,0,.35); border:1px solid var(--line); user-select:all; overflow-wrap:anywhere; max-width:100%}
+.wait{color:var(--muted); display:flex; align-items:center; gap:8px; margin:0}
+.dotp{display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--ice); box-shadow:0 0 10px var(--ice); animation:blink 1.2s infinite; flex:none}
+@keyframes blink{50%{opacity:.25}}
+.mine{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,.55fr); gap:14px; align-items:start; margin-top:6px}
+.side{border-radius:24px; padding:16px; display:grid; gap:10px}
+.side .ph h3{font-size:17px}
+.pst{margin:0; display:flex; align-items:center; gap:8px; font-weight:600}
+.pst.ok .dotp{background:var(--good); box-shadow:0 0 10px var(--good); animation:none}
+.pst.off .dotp{background:var(--bad); box-shadow:none; animation:none}
+.pst:not(.think):not(.ok):not(.off) .dotp{background:var(--muted); box-shadow:none; animation:none}
+.rnd{margin:0; color:var(--muted); font-size:13px}
+.hintp{margin:0; color:var(--muted); font-size:12.5px; line-height:1.45}
+.hud.me{border-color:rgba(255,255,255,.32)}
+.sum{border-radius:24px; padding:18px; display:grid; gap:14px; margin-top:14px}
+.sum h2{margin:0; font-size:20px; font-weight:800}
+.highlights{display:grid; gap:8px}
+.highlights p{margin:0; font-size:14px; display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+.highlights .tag{font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px}
+.sumgrid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px}
+.sumcol{min-width:0}
+.sumcol h3{margin:0 0 8px; font-size:14px; color:var(--muted); font-weight:700}
+.pair{padding:10px 12px; border-radius:14px; background:rgba(255,255,255,.04); border:1px solid var(--line); display:grid; gap:4px; margin-bottom:8px}
+.pair .r{font-size:11.5px; color:var(--muted)}
+.pair .said{font-weight:600}
+.pair .felt{font-style:italic; color:#e6e1ff}
+@media (max-width:760px){
+  .mine,.sumgrid{grid-template-columns:minmax(0,1fr)}
+  .join{margin-left:0}
+}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar">
+    <div class="brand"><h1>Драконы</h1><span class="pill">Сутки тишины</span></div>
+    <div class="icons" id="tools" hidden>
+      <button class="ibtn" id="restart" type="button" aria-label="Начать заново" title="Начать заново"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v4h4"/></svg></button>
+      <button class="ibtn" id="exit" type="button" aria-label="Выйти в меню" title="Выйти в меню"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h4v16h-4"/><path d="M10 8l-4 4 4 4"/><path d="M6 12h10"/></svg></button>
+    </div>
+  </div>
+
+  <section class="home glass" id="home" aria-labelledby="homeTitle">
+    <h2 id="homeTitle">Кем вы играете?</h2>
+    <p class="lead">Нажмите на героя, за которого играете, и выберите пол обоих.</p>
+    <div class="roles">
+      <div class="pick fire" id="pick-fire">
+        <button class="rolebtn" type="button" id="role-fire" data-role="fire"><svg viewBox="0 0 200 230" id="prevFire" aria-hidden="true"></svg><span class="nm">Огонь<span class="me">это я</span></span></button>
+        <div class="seg" role="group" aria-label="Пол героя Огонь">
+          <button type="button" id="g-fire-m" data-side="fire" data-g="m">Он</button>
+          <button type="button" id="g-fire-f" data-side="fire" data-g="f">Она</button>
+        </div>
+      </div>
+      <div class="pick ice" id="pick-ice">
+        <button class="rolebtn" type="button" id="role-ice" data-role="ice"><svg viewBox="0 0 200 230" id="prevIce" aria-hidden="true"></svg><span class="nm">Лёд<span class="me">это я</span></span></button>
+        <div class="seg" role="group" aria-label="Пол героя Лёд">
+          <button type="button" id="g-ice-m" data-side="ice" data-g="m">Он</button>
+          <button type="button" id="g-ice-f" data-side="ice" data-g="f">Она</button>
+        </div>
+      </div>
+    </div>
+    <div class="modes">
+      <button class="cta" id="botBtn" type="button">Играть с ботом</button>
+      <button class="btn" id="createBtn" type="button">Создать комнату</button>
+      <div class="join"><input class="code-in" id="codeIn" maxlength="4" placeholder="КОД" autocomplete="off" aria-label="Код комнаты"><button class="btn" id="joinBtn" type="button">Войти</button></div>
+    </div>
+    <p class="err" id="homeErr" hidden></p>
+  </section>
+
+  <section class="lobby glass" id="join" hidden aria-labelledby="jTitle">
+    <h2 id="jTitle">Приглашение в комнату <span id="jCode"></span></h2>
+    <p class="muted">Вы играете за <b id="jRole"></b>. Выберите пол своего героя.</p>
+    <div class="pick" id="jPick" style="max-width:240px; width:100%">
+      <svg viewBox="0 0 200 230" id="jPrev" aria-hidden="true"></svg>
+      <div class="seg" role="group" aria-label="Пол вашего героя">
+        <button type="button" id="jg-m" data-jg="m">Он</button>
+        <button type="button" id="jg-f" data-jg="f">Она</button>
+      </div>
+    </div>
+    <button class="cta" id="jGo" type="button">Войти в игру</button>
+    <button class="btn" id="jBack" type="button">Назад</button>
+    <p class="err" id="jErr" hidden></p>
+  </section>
+
+  <section class="lobby glass" id="lobby" hidden aria-labelledby="lTitle">
+    <h2 id="lTitle">Комната создана</h2>
+    <p class="muted">Вы играете за <b id="lRole"></b>. Отправьте партнёру код или ссылку.</p>
+    <div class="bigcode" id="lCode"></div>
+    <div class="linkrow"><code id="lLink"></code><button class="btn" id="copyBtn" type="button">Скопировать ссылку</button></div>
+    <p class="wait"><span class="dotp"></span>Ждём, пока партнёр подключится</p>
+  </section>
+
+  <div id="game" hidden>
+    <div class="stagebox">
+      <div class="scene" id="scene">
+        <canvas id="bg" aria-hidden="true"></canvas>
+        <svg viewBox="0 0 800 340" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Сцена: Огонь и Лёд со своими драконами">
+          <g id="hero-fire" transform="translate(150,92)"><g class="hin" id="hin-fire"></g></g>
+          <g id="hero-ice" transform="translate(650,92) scale(-1,1)"><g class="hin" id="hin-ice"></g></g>
+        </svg>
+        <canvas id="cv"></canvas>
+        <div class="hud fire glass" id="hud-fire"><span class="tile t-or" id="tileFire"></span><div class="meta"><div class="line"><span class="num" id="num-fire"></span><span class="st" id="st-fire"></span></div><div class="trk"><div class="fl" id="fill-fire"></div></div></div></div>
+        <div class="hud ice glass" id="hud-ice"><span class="tile t-bl" id="tileIce"></span><div class="meta"><div class="line"><span class="st" id="st-ice"></span><span class="num" id="num-ice"></span></div><div class="trk"><div class="fl" id="fill-ice"></div></div></div></div>
+        <div class="say off" id="say-fire"></div>
+        <div class="say off" id="say-ice"></div>
+        <div class="finale" id="finale" hidden>
+          <div class="card glass">
+            <h2 id="finTitle"></h2>
+            <div id="finText"></div>
+            <div><button class="btn" id="again" type="button">Сыграть ещё раз</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="react glass" id="react" aria-live="polite"></div>
+    </div>
+
+    <section class="intro glass" id="intro" aria-labelledby="introTitle" hidden>
+      <h2 id="introTitle">Сутки тишины</h2>
+      <div class="who">
+        <p class="i"><b>Лёд · фокус на одном</b><span id="introIce"></span></p>
+        <p class="f"><b>Огонь · чувствует всё сразу</b><span id="introFire"></span></p>
+      </div>
+      <p class="now" id="introNow"></p>
+      <button class="cta go" id="go" type="button">Готов</button>
+      <p class="wait" id="introWait" hidden><span class="dotp"></span>Ждём, пока партнёр будет готов</p>
+    </section>
+
+    <div class="mine">
+      <section class="panel glass" id="panel" aria-label="Ваши действия"></section>
+      <aside class="side glass" id="partner" aria-label="Партнёр"></aside>
+    </div>
+    <section class="sum glass" id="summary" hidden aria-label="Разбор"></section>
+    <p class="note">Иллюстрация, а не тест или диагноз.</p>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+(function(){
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const OTHER = {fire:'ice', ice:'fire'}, NAME = {fire:'Огонь', ice:'Лёд'}, GEN = {fire:'Огня', ice:'Льда'};
+let G = {fire:'m', ice:'f'}, ME = 'fire';
+const w = (side, m, f) => G[side] === 'f' ? f : m;
+const $ = id => document.getElementById(id);
+const P = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const IC = {
+  chat:P('<path d="M4 5h16v11H9l-5 4z"/>'),
+  phone:P('<path d="M6 3h3l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v3a2 2 0 0 1-2 2A16 16 0 0 1 4 5a2 2 0 0 1 2-2"/>'),
+  bolt:P('<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>'),
+  dots:P('<circle cx="6" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="18" cy="12" r="1"/>'),
+  ask:P('<path d="M9 9a3 3 0 1 1 4 2.8c-.7.4-1 1-1 1.7V14"/><circle cx="12" cy="18" r=".6"/>'),
+  heart:P('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>'),
+  link:P('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'),
+  leaf:P('<path d="M5 19c0-8 6-14 15-14 0 9-6 15-14 15"/><path d="M5 19l7-7"/>'),
+  mind:P('<circle cx="12" cy="12" r="8"/><path d="M8 12h8"/>'),
+  wave:P('<path d="M3 12h4l2-6 3 12 3-9 2 3h4"/>'),
+  eye:P('<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),
+  mute:P('<path d="M11 5 6 9H3v6h3l5 4z"/><path d="m16 9 5 6M21 9l-5 6"/>'),
+  smile:P('<circle cx="12" cy="12" r="9"/><path d="M8.5 14a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/>'),
+  call:P('<rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/>'),
+  pause:P('<path d="M9 5v14M15 5v14"/>'),
+  flame:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c-4.4 0-7-3-7-6.6 0-3.8 3.2-5.2 3.5-9.4 2.2 1.4 3 3.5 2.9 5 1.4-.9 1.9-2.9 1.8-5 3.4 2 6.8 5.2 6.8 9.4 0 3.6-3.3 6.6-8 6.6z"/></svg>',
+  snow:P('<path d="M12 2v20M3.3 7l17.4 10M20.7 7 3.3 17"/>')
+};
+const TILES = ['t-or','t-bl','t-pk','t-pu','t-gr','t-te','t-rd'];
+
+
+const ACTIONS = {
+  fire: [
+    {id:'f1', kind:'bad', d:18, ic:'chat', label:()=>`«Где ты ${w('ice','пропадал','пропадала')}?!» и ещё пять сообщений следом`, say:()=>`Где ты ${w('ice','пропадал','пропадала')}?! Ответь! Алло?!`, feel:()=>'Меня допрашивают. Хочется исчезнуть ещё сильнее.', self:()=>'Не могу остановиться. Мне страшно.', why:()=>'Тревога взяла верх. Дракон Огня плюётся упрёками, и дракон Льда растёт.'},
+    {id:'f2', kind:'bad', d:15, ic:'phone', label:()=>'Позвонить ещё раз. И ещё.', say:()=>'Звонок. Ещё звонок. И ещё один.', feel:()=>`Телефон разрывается. Как будто я ${w('ice','виноват','виновата')}.`, self:()=>'Ну возьми же трубку…', why:()=>'Дракон Огня давит звонками. Лёд слышит требование отчёта.'},
+    {id:'f3', kind:'bad', d:16, ic:'bolt', label:()=>'«Ну конечно, у тебя же есть дела поважнее меня»', say:()=>'Ну конечно, у тебя же есть дела поважнее меня.', feel:()=>`Меня обвиняют. Значит, я ${w('ice','плохой','плохая')}.`, self:()=>'Пусть знает, как мне больно.', why:()=>'Обида заговорила вместо Огня. Лёд слышит обвинение.'},
+    {id:'f4', kind:'trap', d:10, ic:'dots', label:()=>'«Ладно, всё нормально» и обиженно замолчать', say:()=>'Ладно. Всё нормально.', feel:()=>`Вроде всё нормально, но тянет холодом. Опять я ${w('ice','виноват','виновата')}?`, self:()=>'Я злюсь, но не скажу.', why:()=>'Похоже на спокойствие, но дракон просто затаился. Лёд чувствует холод.'},
+    {id:'f5', kind:'trap', d:9, ic:'ask', label:()=>`«Я не злюсь. Просто объясни, почему ты так ${w('ice','сделал','сделала')}»`, say:()=>`Я не злюсь. Просто объясни, почему ты так ${w('ice','сделал','сделала')}.`, feel:()=>`Опять отчитываться. Я не ${w('ice','обязан','обязана')}.`, self:()=>'Я же спокойно спрашиваю…', why:()=>'Мягкий тон, но это всё тот же допрос.'},
+    {id:'fk', kind:'key', d:8, ic:'chat', label:()=>'«Хорошо, что ты на связи. Мне было тревожно. Расскажешь, когда захочешь?»', say:()=>'Хорошо, что ты на связи. Мне было тревожно. Расскажешь, когда захочешь?', feel:()=>`${w('fire','Он','Она')} не злится. Мне не нужно защищаться.`, self:()=>`Я ${w('fire','сказал','сказала')}, как мне, и не ${w('fire','сорвался','сорвалась')}.`, why:()=>'Огонь удержал своего дракона: тревога сказана словами, а не упрёками. Открылись новые действия.'}
+  ],
+  fireGood: [
+    {id:'fg1', kind:'good', d:14, ic:'heart', label:()=>'Написать «если что, я рядом» и не торопить', say:()=>'Если что, я рядом.', feel:()=>'Меня не торопят. Можно спокойно вернуться.', self:()=>'Я могу подождать.', why:()=>'Огонь спокоен, и Льду не нужно защищаться.'},
+    {id:'fg2', kind:'good', d:12, ic:'link', label:()=>'«В следующий раз просто напиши “я в тишине”, мне хватит»', say:()=>'В следующий раз просто напиши «я в тишине». Мне этого хватит.', feel:()=>'Это несложно. Так я смогу.', self:()=>`Я ${w('fire','попросил','попросила')} о том, что мне нужно.`, why:()=>'Просьба без упрёка, её легко выполнить.'}
+  ],
+  fireInner: [
+    {id:'fi1', kind:'inner', d:10, ic:'mind', label:()=>'Напомнить себе: молчание ещё не значит отказ', say:()=>'Молчание ещё не значит, что меня бросили.', think:true, why:()=>'Огонь успокаивает своего дракона: молчание ещё не отказ.'},
+    {id:'fi2', kind:'inner', d:8, ic:'leaf', label:()=>'Переключиться: прогулка, звонок другу', say:()=>'Пойду пройдусь и позвоню другу.', think:true, why:()=>'Внимание вернулось к себе. Дракон Огня утихает.'}
+  ],
+  ice: [
+    {id:'i1', kind:'bad', d:18, ic:'wave', label:()=>'«Всё норм, чего ты начинаешь»', say:()=>'Всё норм, чего ты начинаешь.', feel:()=>`${w('ice','Он ответил','Она ответила')} сухо и холодно. Мне от этого плохо.`, self:()=>'Отстаньте. Мне просто нужно выдохнуть.', why:()=>'Раздражение взяло верх. Дракон Льда бьёт холодом по Огню.'},
+    {id:'i2', kind:'bad', d:16, ic:'eye', label:()=>'Прочитать и не ответить', say:()=>'…', feel:()=>`${w('ice','Прочитал','Прочитала')} и молчит. Я пустое место.`, self:()=>'Не сейчас. У меня нет сил.', why:()=>'Дракон Льда закрылся. Для Огня это «я пустое место».'},
+    {id:'i3', kind:'bad', d:14, ic:'mute', label:()=>'Поставить чат на беззвучный', say:()=>'Чат на беззвучном.', think:true, feel:()=>'Тишина. Со мной что-то не так?', self:()=>'Пусть будет тихо.', why:()=>'Дракон Льда строит стену тишины. Огонь тревожится сильнее.'},
+    {id:'i4', kind:'trap', d:9, ic:'dots', label:()=>`«${w('ice','Был занят','Была занята')}» и больше ничего`, say:()=>`${w('ice','Был занят','Была занята')}.`, feel:()=>`${w('ice','Занят','Занята')}… и всё? Я так и не понимаю, что между нами.`, self:()=>`Ну я же ${w('ice','ответил','ответила')}.`, why:()=>'Похоже на ответ, но дракон Льда держит дверь закрытой.'},
+    {id:'i5', kind:'trap', d:8, ic:'smile', label:()=>'Отправить стикер вместо ответа', say:()=>'Стикер с котиком.', feel:()=>'Стикер? Мне нужны слова, а не котик.', self:()=>'Так проще, чем объяснять.', why:()=>'Мило, но вопрос остался без ответа.'},
+    {id:'ik', kind:'key', d:8, ic:'chat', label:()=>`«Прости, что ${w('ice','пропал','пропала')}. Был завал, нужно было выдохнуть. Ты для меня ${w('fire','важен','важна')}»`, say:()=>`Прости, что ${w('ice','пропал','пропала')} без предупреждения. Был завал, нужно было выдохнуть. Всё в порядке, ты для меня ${w('fire','важен','важна')}.`, feel:()=>`Меня не вычеркнули. Я ${w('fire','важен','важна')}.`, self:()=>`Я ${w('ice','объяснил','объяснила')}, и мне тоже стало легче.`, why:()=>'Лёд удержал своего дракона и объяснил, что случилось. Открылись новые действия.'}
+  ],
+  iceGood: [
+    {id:'ig1', kind:'good', d:14, ic:'call', label:()=>'Предложить вечером спокойно созвониться', say:()=>'Созвонимся вечером? Хочу спокойно поговорить.', feel:()=>'Будет разговор. Можно выдохнуть.', self:()=>`Поговорим, когда я ${w('ice','готов','готова')}.`, why:()=>'Лёд спокоен, и Огню не нужно гадать.'},
+    {id:'ig2', kind:'good', d:12, ic:'link', label:()=>'«Если мне нужна тишина, напишу одно слово и вернусь»', say:()=>'Если мне нужна тишина, я напишу одно слово и вернусь.', feel:()=>'Теперь тишина не будет пугать.', self:()=>'Так я смогу отдыхать без чувства вины.', why:()=>'Тишина больше не будет пугать.'}
+  ],
+  iceInner: [
+    {id:'ii1', kind:'inner', d:10, ic:'mind', label:()=>`«Я ${w('ice','устал','устала')}, на меня не нападают»`, say:()=>`Я просто ${w('ice','устал','устала')}. На меня не нападают.`, think:true, why:()=>'Лёд успокаивает своего дракона: на него не нападают.'},
+    {id:'ii2', kind:'inner', d:8, ic:'pause', label:()=>'Вдох и пауза перед ответом', say:()=>'Вдох. Пауза. Потом отвечу.', think:true, why:()=>'Пауза гасит раздражение. Дракон Льда утихает.'}
+  ]
+};
+const BY_ID = {}; Object.values(ACTIONS).flat().forEach(a => BY_ID[a.id] = a);
+const THOUGHT = {
+  fire: st => st === 'peak' ? 'Меня вычеркнули…' : st === 'tense' ? `Почему ${w('ice','он','она')} молчит?` : 'Можно выдохнуть',
+  ice:  st => st === 'peak' ? 'Опять требуют отчёта…' : st === 'tense' ? 'Хочется спрятаться' : 'Можно открыться'
+};
+
+
+const INK = '#2b2f3a', SKIN = '#ffe2c9';
+function heroSVG(side, g, st){
+  let s = `<g stroke="${INK}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">`;
+  const head = `<circle cx="70" cy="114" r="6" fill="${SKIN}"/><circle cx="130" cy="114" r="6" fill="${SKIN}"/><circle cx="100" cy="112" r="30" fill="${SKIN}"/>`;
+  const lashes = y => g === 'f' ? `<path d="M85 ${y} l-5 -3 M115 ${y} l5 -3" stroke-width="2.5"/>` : '';
+  if (side === 'fire'){
+    const hairC = st === 'peak' ? '#ff6a2b' : '#ff8a3d';
+    s += `<path class="breathe" d="M45 230 V202 Q45 158 100 152 Q155 158 155 202 V230" fill="#ffc845"/><path d="M92 160 L90 184 M108 160 L110 184"/>`;
+    if (g === 'f') s += `<path class="flick" d="M70 104 Q56 150 62 182 L80 176 Q74 146 80 116 Z" fill="${hairC}"/><path class="flick" d="M130 104 Q144 150 138 182 L120 176 Q126 146 120 116 Z" fill="${hairC}"/>`;
+    s += head;
+    if (st === 'calm') s += `<path class="flick" d="M72 104 Q66 78 82 82 Q82 60 98 70 Q106 50 114 72 Q130 64 128 104 Q118 92 100 94 Q84 90 72 104 Z" fill="${hairC}"/>`;
+    else if (st === 'tense') s += `<path class="flick" d="M70 104 Q60 72 80 78 Q76 48 96 64 Q104 36 115 66 Q134 54 130 104 Q118 92 100 94 Q84 90 70 104 Z" fill="${hairC}"/>`;
+    else s += `<path class="flick" d="M64 106 Q48 68 72 72 Q62 36 88 52 Q92 18 108 46 Q122 20 124 56 Q150 44 136 106 Q118 90 100 92 Q82 88 64 106 Z" fill="${hairC}"/><path class="flick" d="M80 92 Q76 72 88 74 Q92 56 102 70 Q110 54 114 74 Q124 72 120 92 Q110 86 100 88 Q90 86 80 92 Z" fill="#ffc845" stroke="none"/>`;
+    if (st === 'calm') s += `<circle cx="82" cy="124" r="4" fill="#ffb3a0" stroke="none"/><circle cx="118" cy="124" r="4" fill="#ffb3a0" stroke="none"/>`;
+    if (st === 'peak') s += `<circle cx="89" cy="115" r="5" fill="#fff"/><circle cx="111" cy="115" r="5" fill="#fff"/><circle cx="89" cy="115" r="2.2" fill="${INK}" stroke="none"/><circle cx="111" cy="115" r="2.2" fill="${INK}" stroke="none"/><path d="M82 102 L94 107 M118 102 L106 107"/>`;
+    else s += `<circle cx="89" cy="115" r="2.6" fill="${INK}" stroke="none"/><circle cx="111" cy="115" r="2.6" fill="${INK}" stroke="none"/>` + lashes(111);
+    if (st === 'tense') s += `<path d="M82 106 L93 102 M118 106 L107 102"/><ellipse cx="100" cy="129" rx="4" ry="5" fill="${INK}"/><path d="M136 90 Q130 100 136 104 Q142 100 136 90 Z" fill="#8fd3ff"/>`;
+    if (st === 'calm') s += `<path d="M90 126 Q100 135 110 126" fill="none"/>`;
+    if (st === 'peak') s += `<path d="M88 128 Q100 122 112 128 Q100 142 88 128 Z" fill="${INK}"/>`;
+    s += `<circle cx="150" cy="192" r="9" fill="${SKIN}"/>`;
+    if (st === 'calm') s += `<path class="flick" d="M150 180 Q143 172 150 162 Q157 172 150 180 Z" fill="#ff8a3d"/>`;
+    if (st === 'tense') s += `<path class="flick" d="M150 182 Q138 170 150 148 Q162 170 150 182 Z" fill="#ff8a3d"/><path class="flick" d="M150 178 Q145 171 150 162 Q155 171 150 178 Z" fill="#ffd23f" stroke="none"/>`;
+    if (st === 'peak') s += `<path class="flick" d="M150 184 Q132 166 150 134 Q168 166 150 184 Z" fill="#ff6a2b"/><path class="flick" d="M150 178 Q142 166 150 154 Q158 166 150 178 Z" fill="#ffd23f" stroke="none"/><path class="flick" d="M20 230 Q10 214 22 200 Q34 214 30 230 Z" fill="#ff8a3d"/><path class="flick" d="M172 230 Q162 210 176 194 Q188 212 184 230 Z" fill="#ff8a3d"/>`;
+  } else {
+    s += `<path class="breathe" d="M45 230 V202 Q45 158 100 152 Q155 158 155 202 V230" fill="#5bb4e8"/>`;
+    if (g === 'f') s += `<path d="M68 104 Q58 152 68 182 L88 176 Q80 144 82 114 Z" fill="#2f6fb3"/><path d="M132 104 Q142 152 132 182 L112 176 Q120 144 118 114 Z" fill="#2f6fb3"/>`;
+    s += `<path d="M68 160 Q100 176 132 160 L130 172 Q100 188 70 172 Z" fill="#fff"/>`;
+    if (st === 'calm') s += `<path d="M112 178 L116 206 L126 204 L120 176" fill="#fff"/>`;
+    if (st === 'tense') s += `<path d="M44 176 Q56 164 66 172 Q62 182 50 184 Z" fill="#eaf7ff"/><path d="M156 176 Q144 164 134 172 Q138 182 150 184 Z" fill="#eaf7ff"/>`;
+    if (st !== 'calm') s += `<rect x="58" y="188" width="84" height="20" rx="10" fill="#4aa3d8"/>`;
+    s += head + `<path d="M68 110 Q66 76 100 76 Q134 76 132 110 L126 98 L120 108 L113 94 L106 106 L100 92 L94 106 L87 94 L80 108 L74 98 Z" fill="#2f6fb3"/>`;
+    if (st === 'tense') s += `<path d="M126 98 L127 106 M100 92 L100 100 M74 98 L73 106" stroke="#bfe9ff" stroke-width="2.5"/>`;
+    if (st === 'calm') s += `<path d="M85 118 Q89 121 93 118 M107 118 Q111 121 115 118" fill="none"/>${g==='f'?'<path d="M85 117 l-4 -2 M115 117 l4 -2" stroke-width="2.5"/>':''}<circle cx="82" cy="125" r="4" fill="#ffc3c3" stroke="none"/><circle cx="118" cy="125" r="4" fill="#ffc3c3" stroke="none"/><path d="M94 128 Q100 132 106 128" fill="none"/><g class="spin" stroke="#8fd3ff" stroke-width="2.5"><path d="M160 104 v24 M150 110 l20 12 M170 110 l-20 12"/></g>`;
+    if (st === 'tense') s += `<path d="M83 109 L94 111 M117 109 L106 111"/><circle cx="89" cy="117" r="2.6" fill="${INK}" stroke="none"/><circle cx="111" cy="117" r="2.6" fill="${INK}" stroke="none"/>${lashes(114)}<path d="M92 130 L108 130"/>`;
+    if (st === 'peak') s += `<path d="M85 115 L92 118 L85 121 M115 115 L108 118 L115 121" fill="none"/><path d="M90 131 Q95 127 100 131 Q105 135 110 131" fill="none"/><polygon points="100,22 178,66 178,196 100,228 22,196 22,66" fill="#cfeeff" fill-opacity="0.45" stroke="#8fd3ff"/><path d="M100 22 L106 52 L96 70 L104 96 M178 66 L150 84 L156 106 M22 196 L50 176 L44 154 M178 196 L148 178" fill="none" stroke="#fff" stroke-width="2.5"/>`;
+  }
+  return s + '</g>';
+}
+
+
+/* ---------- engine (pure, shared by bot and rooms) ---------- */
+const START = {fire:48, ice:38}, MAX_ROUNDS = 12, SIDES = ['fire','ice'];
+const ALL = Object.values(ACTIONS).flat();
+const rnd = n => (Math.random()*n)|0;
+const arr = x => Array.isArray(x) ? x : (x && typeof x === 'object' ? Object.keys(x).sort((a,b)=>a-b).map(k=>x[k]) : []);
+const clamp = v => Math.max(0, Math.min(100, v));
+const shuffleIds = list => list.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1].id);
+function newGame(){
+  const tiles = {}; ALL.forEach(a => tiles[a.id] = TILES[rnd(TILES.length)]);
+  return {round:1, lvl:{...START}, key:{fire:false, ice:false}, used:{fire:[], ice:[]},
+    order:{fire:shuffleIds(ACTIONS.fire), ice:shuffleIds(ACTIONS.ice)}, tiles, picks:{}, history:[], last:null, done:false, outcome:''};
+}
+function norm(g){
+  if (!g) return null;
+  g.lvl = g.lvl || {...START};
+  g.key = {fire:!!(g.key && g.key.fire), ice:!!(g.key && g.key.ice)};
+  g.used = {fire:arr(g.used && g.used.fire), ice:arr(g.used && g.used.ice)};
+  g.order = {fire:arr(g.order && g.order.fire), ice:arr(g.order && g.order.ice)};
+  g.picks = g.picks || {};
+  g.tiles = g.tiles || {};
+  g.history = arr(g.history).map(h => ({round:h.round, events:arr(h.events)}));
+  g.last = g.last ? {round:g.last.round, before:g.last.before, after:g.last.after, events:arr(g.last.events)} : null;
+  g.done = !!g.done; g.outcome = g.outcome || '';
+  return g;
+}
+function applyAction(g, side, id){
+  const a = BY_ID[id], other = side==='fire' ? 'ice' : 'fire';
+  const ev = {side, id, self:0, other:0, relapse:false};
+  if (a.kind === 'bad' || a.kind === 'trap'){
+    const m = g.key[side] ? 1.3 : 1;
+    ev.other = Math.round(a.d*m); ev.self = Math.round(a.d*0.5*m); ev.relapse = !!g.key[side];
+  } else if (a.kind === 'key'){
+    g.key[side] = true; ev.self = -16; ev.other = -8;
+    if (!g.used[side].includes(id)) g.used[side].push(id);
+  } else if (a.kind === 'good'){ ev.self = -4; ev.other = -a.d; }
+  else { ev.self = -a.d; }
+  g.lvl[side] = clamp(g.lvl[side] + ev.self);
+  g.lvl[other] = clamp(g.lvl[other] + ev.other);
+  return ev;
+}
+function resolve(g){
+  const pf = g.picks.fire, pi = g.picks.ice;
+  if (!pf || !pi || g.done) return false;
+  const order = (pf.t || 0) <= (pi.t || 0) ? ['fire','ice'] : ['ice','fire'];
+  const before = {...g.lvl};
+  const events = order.map(s => applyAction(g, s, g.picks[s].id));
+  for (const s of SIDES){
+    let d = 0; if (!g.key[s==='fire'?'ice':'fire']) d += 3; if (g.key[s]) d -= 5;
+    g.lvl[s] = clamp(g.lvl[s] + d);
+  }
+  if (g.key.fire && g.key.ice && g.lvl.fire < 12 && g.lvl.ice < 12){ g.done = true; g.outcome = 'win'; g.lvl = {fire:0, ice:0}; }
+  else if (g.round >= MAX_ROUNDS){ g.done = true; g.outcome = 'lose'; }
+  g.last = {round:g.round, before, after:{...g.lvl}, events};
+  g.history.push({round:g.round, events});
+  g.round++; g.picks = {};
+  return true;
+}
+function botPick(g, side){
+  const other = side==='fire' ? 'ice' : 'fire';
+  const main = g.order[side];
+  const key = main.find(id => BY_ID[id].kind === 'key');
+  const bads = main.filter(id => BY_ID[id].kind !== 'key');
+  const goods = ACTIONS[side+'Good'].map(a=>a.id), inners = ACTIONS[side+'Inner'].map(a=>a.id);
+  const pickR = l => l[rnd(l.length)];
+  if (!g.key[side]){
+    const p = 0.12 + 0.14*(g.round - 1) + (g.key[other] ? 0.3 : 0);
+    if (Math.random() < p) return key;
+    if (Math.random() < 0.2) return pickR(inners);
+    return pickR(bads);
+  }
+  if (Math.random() < 0.15) return pickR(bads);
+  return Math.random() < 0.65 ? pickR(goods) : pickR(inners);
+}
+
+/* ---------- app state ---------- */
+const App = {mode:null, code:null, ref:null, room:null, game:null, local:null, animating:false, lastPlayed:0,
+  introDone:false, tab:'main', timers:[], joinSide:null, presence:null, screen:'home'};
+let V = {...START};
+let FINALE_WIN = false;
+const later = (fn, ms) => { const t = setTimeout(fn, ms); App.timers.push(t); return t; };
+const clone = o => JSON.parse(JSON.stringify(o));
+let PID;
+try { PID = localStorage.getItem('drakony-pid'); if (!PID){ PID = Math.random().toString(36).slice(2,10); localStorage.setItem('drakony-pid', PID); } }
+catch(e){ PID = Math.random().toString(36).slice(2,10); }
+try { const q = new URLSearchParams(location.search).get('pid'); if (q) PID = q; } catch(e){}
+try { const p = JSON.parse(localStorage.getItem('drakony-prefs') || 'null'); if (p){ if (p.G) G = p.G; if (p.ME) ME = p.ME; } } catch(e){}
+const savePrefs = () => { try { localStorage.setItem('drakony-prefs', JSON.stringify({G, ME})); } catch(e){} };
+
+/* ---------- firebase ---------- */
+const FB_CONFIG = {
+  apiKey: "AIzaSyClQCKpW2j_90eerNy7o-_SvXUz6qFwwxE",
+  authDomain: "drakony.firebaseapp.com",
+  databaseURL: "https://drakony-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "drakony",
+  storageBucket: "drakony.firebasestorage.app",
+  messagingSenderId: "164129789318",
+  appId: "1:164129789318:web:ba15ac946fa654f1d34807"
+};
+let DB = null;
+function db(){
+  if (!DB){
+    if (!window.firebase) throw new Error('Firebase не загрузился. Проверьте интернет.');
+    firebase.initializeApp(FB_CONFIG); DB = firebase.database();
+  }
+  return DB;
+}
+const TS = () => firebase.database.ServerValue.TIMESTAMP;
+
+/* ---------- screens ---------- */
+function showScreen(name){
+  App.screen = name;
+  for (const s of ['home','join','lobby','game']) $(s).hidden = s !== name;
+  $('tools').hidden = !(name === 'game' || name === 'lobby');
+  $('restart').hidden = name !== 'game';
+  if (name === 'game') requestAnimationFrame(resize);
+}
+function homeErr(msg){ const e = $('homeErr'); e.textContent = msg || ''; e.hidden = !msg; }
+
+/* ---------- home ---------- */
+function renderHome(){
+  $('prevFire').innerHTML = heroSVG('fire', G.fire, 'calm');
+  $('prevIce').innerHTML = heroSVG('ice', G.ice, 'calm');
+  for (const side of SIDES){
+    $('role-'+side).setAttribute('aria-pressed', String(ME === side));
+    $('pick-'+side).classList.toggle('sel', ME === side);
+    for (const g of ['m','f']) $(`g-${side}-${g}`).setAttribute('aria-pressed', String(G[side] === g));
+  }
+}
+document.querySelectorAll('[data-role]').forEach(b => b.addEventListener('click', () => { ME = b.dataset.role; savePrefs(); renderHome(); }));
+document.querySelectorAll('#home .seg button').forEach(b => b.addEventListener('click', () => { G[b.dataset.side] = b.dataset.g; savePrefs(); renderHome(); }));
+
+/* ---------- bot mode ---------- */
+function startBot(){
+  leave(); App.mode = 'bot'; App.local = newGame(); App.introDone = false; App.lastPlayed = 0; App.tab = 'main';
+  V = {...App.local.lvl}; resetScene(); showScreen('game'); onGame(clone(App.local));
+}
+function scheduleBot(){
+  if (App.mode !== 'bot' || !App.introDone) return;
+  const g = App.local, bot = OTHER[ME];
+  if (g.done || g.picks[bot]) return;
+  later(() => {
+    if (App.mode !== 'bot' || g !== App.local || g.picks[bot] || g.done) return;
+    g.picks[bot] = {id:botPick(g, bot), t:Date.now()};
+    localResolve();
+  }, 1400 + Math.random()*1800);
+}
+function localResolve(){ const g = App.local; if (g.picks.fire && g.picks.ice) resolve(g); onGame(clone(g)); }
+
+/* ---------- rooms ---------- */
+function genCode(){ const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let c = ''; for (let i=0;i<4;i++) c += A[rnd(A.length)]; return c; }
+async function createRoom(){
+  homeErr('');
+  try {
+    let code, ref;
+    for (let i=0;i<5;i++){ code = genCode(); ref = db().ref('rooms/'+code); const s = await ref.get(); if (!s.exists()) break; }
+    await ref.set({created:TS(), phase:'lobby', genders:{fire:G.fire, ice:G.ice}, players:{[ME]:{id:PID, online:true}}, ready:{fire:false, ice:false}, game:newGame()});
+    location.hash = code;
+  } catch(e){ homeErr('Не получилось создать комнату: ' + e.message); }
+}
+function enterRoom(code){
+  leave();
+  App.mode = 'room'; App.code = code; App.lastPlayed = -1; App.tab = 'main';
+  try { App.ref = db().ref('rooms/'+code); }
+  catch(e){ showScreen('home'); homeErr(e.message); return; }
+  App.ref.on('value', snap => onRoom(snap.val()), err => { showScreen('home'); homeErr('Нет доступа к комнате: ' + err.message); });
+}
+function onRoom(r){
+  if (App.mode !== 'room') return;
+  if (!r){ const c = App.code; leave(); history.replaceState(null, '', location.pathname); showScreen('home'); renderHome(); homeErr(`Комната ${c} не найдена.`); return; }
+  App.room = r;
+  if (r.genders) G = {fire:r.genders.fire || 'm', ice:r.genders.ice || 'f'};
+  const pl = r.players || {};
+  const mine = SIDES.find(s => pl[s] && pl[s].id === PID);
+  if (!mine){
+    const free = SIDES.find(s => !pl[s]);
+    if (!free){ leave(); history.replaceState(null, '', location.pathname); showScreen('home'); renderHome(); homeErr('В этой комнате уже двое игроков.'); return; }
+    App.joinSide = free; showJoin(); return;
+  }
+  if (ME !== mine || !App.presence){ ME = mine; setupPresence(); }
+  if (r.phase === 'lobby'){ showLobby(); return; }
+  if (App.screen !== 'game'){ showScreen('game'); }
+  if (App.lastPlayed === -1){ const g = norm(clone(r.game)); App.lastPlayed = g.last ? g.last.round : 0; V = {...g.lvl}; resetScene(); }
+  onGame(clone(r.game));
+}
+function setupPresence(){
+  const pref = App.ref.child('players/'+ME+'/online');
+  const conn = db().ref('.info/connected');
+  const h = s => { if (s.val() === true){ pref.onDisconnect().set(false); pref.set(true); } };
+  conn.on('value', h);
+  App.presence = {conn, h, pref};
+}
+let JG = 'm';
+function showJoin(){
+  showScreen('join');
+  $('jCode').textContent = App.code;
+  $('jRole').textContent = NAME[App.joinSide];
+  JG = G[App.joinSide] || 'm';
+  renderJoin();
+}
+function renderJoin(){
+  $('jPrev').innerHTML = heroSVG(App.joinSide, JG, 'calm');
+  $('jPick').className = 'pick ' + App.joinSide;
+  $('jg-m').setAttribute('aria-pressed', String(JG==='m')); $('jg-f').setAttribute('aria-pressed', String(JG==='f'));
+}
+document.querySelectorAll('[data-jg]').forEach(b => b.addEventListener('click', () => { JG = b.dataset.jg; renderJoin(); }));
+$('jGo').addEventListener('click', () => {
+  const side = App.joinSide; $('jErr').hidden = true;
+  App.ref.transaction(r => {
+    if (!r) return r;
+    r.players = r.players || {};
+    if (r.players[side]) return;
+    r.players[side] = {id:PID, online:true};
+    r.genders = r.genders || {}; r.genders[side] = JG;
+    if (r.players.fire && r.players.ice && r.phase === 'lobby') r.phase = 'intro';
+    return r;
+  }).then(res => { if (!res.committed){ $('jErr').textContent = 'Это место уже заняли.'; $('jErr').hidden = false; } })
+    .catch(e => { $('jErr').textContent = 'Ошибка: ' + e.message; $('jErr').hidden = false; });
+});
+function showLobby(){
+  showScreen('lobby');
+  $('lCode').textContent = App.code;
+  $('lLink').textContent = location.origin + location.pathname + '#' + App.code;
+  $('lRole').textContent = NAME[ME];
+}
+$('copyBtn').addEventListener('click', () => {
+  const txt = $('lLink').textContent, b = $('copyBtn');
+  const done = () => { b.textContent = 'Скопировано'; setTimeout(() => b.textContent = 'Скопировать ссылку', 1600); };
+  try { navigator.clipboard.writeText(txt).then(done, () => selectLink()); } catch(e){ selectLink(); }
+});
+function selectLink(){ const r = document.createRange(); r.selectNodeContents($('lLink')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+
+/* ---------- leaving ---------- */
+function leave(){
+  App.timers.forEach(clearTimeout); App.timers = [];
+  if (App.ref){
+    App.ref.off();
+    if (App.presence){ App.presence.conn.off('value', App.presence.h); App.presence.pref.onDisconnect().cancel(); App.presence.pref.set(false).catch(()=>{}); }
+  }
+  App.ref = null; App.room = null; App.presence = null; App.game = null; App.local = null; App.mode = null; App.animating = false;
+  FINALE_WIN = false; $('finale').hidden = true; $('summary').hidden = true;
+}
+function resetScene(){
+  parts = []; shots = []; floats = []; curHero.fire = curHero.ice = '';
+  for (const s of SIDES){ shown[s] = V[s]; pulse[s] = lunge[s] = tame[s] = 0; $('say-'+s).classList.add('off'); }
+  FINALE_WIN = false; $('finale').hidden = true; $('summary').hidden = true;
+}
+
+/* ---------- game flow ---------- */
+function phaseOpen(){
+  if (!App.game || App.game.done) return false;
+  return App.mode === 'bot' ? App.introDone : (App.room && App.room.phase === 'play');
+}
+function canPick(){ return phaseOpen() && !App.animating && !(App.game.picks && App.game.picks[ME]); }
+function choose(id){
+  if (!canPick()) return;
+  if (App.mode === 'bot'){
+    App.local.picks[ME] = {id, t:Date.now()}; localResolve();
+  } else {
+    App.game.picks[ME] = {id, t:0}; renderAll();
+    App.ref.child('game/picks/'+ME).set({id, t:TS()})
+      .then(() => App.ref.child('game').transaction(g => {
+        if (!g) return g;
+        g = norm(g);
+        if (g.done || !(g.picks.fire && g.picks.ice)) return;
+        resolve(g); return g;
+      }))
+      .catch(e => setReactText('info', 'Ошибка сети', e.message));
+  }
+}
+function onGame(g){
+  g = norm(g); App.game = g;
+  if (!g.last && App.lastPlayed > 0){ App.lastPlayed = 0; V = {...g.lvl}; resetScene(); App.introDone = false; App.tab = 'main'; }
+  if (g.last && g.last.round > App.lastPlayed){ App.lastPlayed = g.last.round; playReveal(g.last); }
+  else if (!App.animating){ V = {...g.lvl}; if (g.done) showEnd(); }
+  renderAll();
+}
+function playReveal(last){
+  App.animating = true; V = {...last.before}; renderAll();
+  const step = reduce ? 1200 : 3300;
+  last.events.forEach((ev, i) => later(() => visualEvent(ev), 300 + i*step));
+  later(() => {
+    V = {...last.after}; App.animating = false; renderAll();
+    if (App.game && App.game.done) showEnd(); else scheduleBot();
+  }, 300 + last.events.length*step + 400);
+}
+const TAGS = {bad:'Дракон взял верх', trap:'Ловушка', key:'Справился со своим драконом', good:'Поддержал', inner:'Усмирил дракона'};
+function visualEvent(ev){
+  const a = BY_ID[ev.id], side = ev.side, other = OTHER[side];
+  const col = s => s === 'fire' ? '#ff9b6b' : '#7fdcff';
+  const num = v => (v > 0 ? '+' : '−') + Math.abs(v);
+  bubble(side, a.say(), a.think);
+  setReactText(ev.kind || a.kind, `${NAME[side]} · ${TAGS[a.kind]}`, (ev.relapse ? 'Срыв. ' : '') + a.why());
+  if (side === ME && a.self) later(() => bubble(side, a.self(), true), 2100);
+  const feel = () => { if (other === ME && a.feel) bubble(other, a.feel(), true); };
+  const bump = (s, v, c) => { if (!v) return; V[s] = clamp(V[s] + v); floatNum(s, num(v), c || (v > 0 ? col(s) : '#6ff0ae')); drawStatus(); };
+  if (a.kind === 'bad' || a.kind === 'trap'){
+    bump(side, ev.self); pulse[side] = 1; lunge[side] = 1; animHero(side, 'flinch');
+    shoot(side, other, 'feed', () => { bump(other, ev.other); animHero(other, 'flinch'); feel(); }, true);
+  } else if (a.kind === 'key'){
+    tame[side] = 1; bump(side, ev.self); animHero(side, 'relief');
+    later(() => { bump(other, ev.other); animHero(other, 'relief'); feel(); }, 650);
+  } else if (a.kind === 'good'){
+    bump(side, ev.self); animHero(side, 'throw');
+    shoot(side, other, 'calm', () => { bump(other, ev.other); animHero(other, 'relief'); feel(); }, false);
+  } else {
+    tame[side] = 1; bump(side, ev.self); animHero(side, 'relief');
+  }
+}
+
+/* ---------- intro / ready ---------- */
+function renderIntro(){
+  const show = App.mode === 'bot' ? !App.introDone : (App.room && App.room.phase === 'intro');
+  $('intro').hidden = !show;
+  if (!show) return;
+  $('introIce').textContent = `Дел очень много, времени нет ни на что. ${w('ice','Он умеет','Она умеет')} сосредоточиться на одной задаче и решить её, поэтому просто ${w('ice','пропал','пропала')} из связи на сутки.`;
+  $('introFire').textContent = `Дела есть и у ${w('fire','него','неё')}, но абстрагироваться ${w('fire','он','она')} не умеет: работа, тревога и тишина в телефоне наваливаются разом.`;
+  $('introNow').textContent = `Через сутки Лёд пишет «привет», как будто ничего не было. Вы играете за ${NAME[ME] === 'Огонь' ? 'Огонь' : 'Лёд'}${App.mode === 'bot' ? ', за второго героя играет бот' : ''}.`;
+  const iAmReady = App.mode === 'room' && App.room.ready && App.room.ready[ME];
+  $('go').hidden = !!iAmReady; $('introWait').hidden = !iAmReady;
+}
+$('go').addEventListener('click', () => {
+  if (App.mode === 'bot'){ App.introDone = true; renderAll(); scheduleBot(); return; }
+  App.ref.child('ready/'+ME).set(true).then(() => App.ref.transaction(r => {
+    if (!r) return r;
+    if (r.phase === 'intro' && r.ready && r.ready.fire && r.ready.ice){ r.phase = 'play'; return r; }
+    return;
+  }));
+});
+function rematch(){
+  if (App.mode === 'bot'){ startBot(); return; }
+  App.ref.transaction(r => { if (!r) return r; r.game = newGame(); r.phase = 'intro'; r.ready = {fire:false, ice:false}; return r; });
+}
+
+/* ---------- panel, partner, reaction ---------- */
+function row(a){
+  const g = App.game, used = a.kind === 'key' && g.used[ME].includes(a.id);
+  const dis = !canPick() || used;
+  return `<button class="row" type="button" id="act-${a.id}" data-id="${a.id}" ${dis?'disabled':''}><span class="tile ${g.tiles[a.id] || 't-bl'}">${IC[a.ic]}</span><span class="lbl">${a.label()}</span>${used?'<span class="ok">готово</span>':'<span class="chev">›</span>'}</button>`;
+}
+function renderPanel(){
+  const g = App.game, side = ME;
+  if (App.tab === 'good' && !g.key[side]) App.tab = 'main';
+  const tab = App.tab;
+  const list = tab === 'main' ? g.order[side].map(id=>BY_ID[id]) : tab === 'good' ? ACTIONS[side+'Good'] : ACTIONS[side+'Inner'];
+  const el = $('panel'); el.className = 'panel glass ' + side;
+  el.innerHTML = `
+    <div class="ph"><span class="tile ${side==='fire'?'t-or':'t-bl'}">${side==='fire'?IC.flame:IC.snow}</span><h3>${NAME[side]}</h3><span class="trait">${side==='fire'?'Чувствует всё сразу':'Фокус на одном'}</span></div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" type="button" id="tab-main" data-tab="main" aria-selected="${tab==='main'}">Действия</button>
+      ${g.key[side] ? `<button class="tab" role="tab" type="button" id="tab-good" data-tab="good" aria-selected="${tab==='good'}">Новые</button>` : ''}
+      <button class="tab" role="tab" type="button" id="tab-inner" data-tab="inner" aria-selected="${tab==='inner'}">Усмирить дракона</button>
+    </div>
+    <div class="list" role="tabpanel">${list.map(row).join('')}</div>`;
+}
+$('panel').addEventListener('click', e => {
+  const t = e.target.closest('.tab');
+  if (t){ App.tab = t.dataset.tab; renderPanel(); const nt = $('tab-'+App.tab); nt && nt.focus({preventScroll:true}); return; }
+  const b = e.target.closest('.row'); if (!b || b.disabled) return;
+  choose(b.dataset.id);
+});
+function renderPartner(){
+  const g = App.game, other = OTHER[ME];
+  let st, cls = '';
+  if (g.done) st = 'Игра окончена';
+  else if (App.animating) st = 'Раскрываем ходы';
+  else if (App.mode === 'room' && App.room && App.room.players && App.room.players[other] && App.room.players[other].online === false){ st = 'Не в сети'; cls = 'off'; }
+  else if (!phaseOpen()) st = 'Готовится';
+  else if (g.picks[other]){ st = 'Ход выбран'; cls = 'ok'; }
+  else { st = App.mode === 'bot' ? 'Бот думает…' : 'Выбирает ход…'; cls = 'think'; }
+  $('partner').innerHTML = `
+    <div class="ph"><span class="tile ${other==='fire'?'t-or':'t-bl'}">${other==='fire'?IC.flame:IC.snow}</span><h3>${NAME[other]}</h3><span class="trait">${App.mode==='bot'?'бот':'партнёр'}</span></div>
+    <p class="pst ${cls}"><span class="dotp"></span>${st}</p>
+    <p class="rnd">Раунд ${Math.min(g.round, MAX_ROUNDS)} из ${MAX_ROUNDS}</p>
+    <p class="hintp">Вы не видите, что выбрал партнёр, пока ходы не раскроются. Его мысли откроются в разборе.</p>`;
+}
+function setReactText(kind, tag, msg){
+  const el = $('react');
+  el.innerHTML = `<span class="tag ${kind}">${tag}</span><span class="msg">${msg}</span>`;
+  if (!reduce){ el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
+}
+function renderReactIdle(){
+  if (App.animating) return;
+  const g = App.game;
+  if (g.done) setReactText(g.outcome === 'win' ? 'good' : 'bad', g.outcome === 'win' ? 'Победа' : 'Конец игры', 'Разбор раундов ниже.');
+  else if (!phaseOpen()) setReactText('info', 'Сутки тишины', 'Прочитайте, что случилось, и нажмите «Готов».');
+  else if (g.picks[ME]) setReactText('info', 'Ход выбран', App.mode === 'bot' ? 'Ждём, пока бот выберет свой.' : 'Ждём ход партнёра.');
+  else setReactText('info', `Раунд ${g.round}`, 'Выберите ход вашего героя.');
+}
+function renderAll(){
+  if (!App.game) return;
+  renderPanel(); renderPartner(); renderReactIdle(); renderIntro(); drawStatus();
+}
+
+/* ---------- end + summary ---------- */
+function showEnd(){
+  const g = App.game; if (!g || !g.done) return;
+  FINALE_WIN = g.outcome === 'win';
+  $('finTitle').textContent = FINALE_WIN ? 'Драконы уснули' : 'Драконы не уснули';
+  $('finText').innerHTML = FINALE_WIN
+    ? '<p>Огню дали понять, что его не забыли и не вычеркнули из жизни.</p><p>Лёд получил возможность побыть наедине с собой без упрёков.</p><p>Оба добились гармонии в отношениях.</p>'
+    : `<p>За ${MAX_ROUNDS} раундов драконы так и не успокоились.</p><p>Посмотрите разбор ниже: там видно, что чувствовал каждый.</p>`;
+  $('finale').hidden = false;
+  buildSummary();
+}
+function esc(t){ return String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function buildSummary(){
+  const g = App.game, other = OTHER[ME];
+  const heard = [], inner = [];
+  let worst = null, best = null;
+  g.history.forEach(h => h.events.forEach(ev => {
+    const a = BY_ID[ev.id];
+    if (ev.side === ME){
+      if (a.feel) heard.push({r:h.round, said:a.label(), felt:a.feel()});
+      if (ev.other > 0 && (!worst || ev.other > worst.v)) worst = {v:ev.other, t:a.label()};
+      if (ev.other < 0 && (!best || ev.other < best.v)) best = {v:ev.other, t:a.label()};
+    } else if (a.self) inner.push({r:h.round, said:a.label(), felt:a.self()});
+  }));
+  const group = list => { const m = new Map(); list.forEach(p => { const k = p.said + '|' + p.felt; if (!m.has(k)) m.set(k, {said:p.said, felt:p.felt, rs:[]}); m.get(k).rs.push(p.r); }); return [...m.values()]; };
+  const rlabel = rs => rs.length === 1 ? `Раунд ${rs[0]}` : `Раунды ${rs.join(', ')}`;
+  const pairs = (list, empty) => list.length ? group(list).map(p => `<div class="pair"><span class="r">${rlabel(p.rs)}${p.rs.length > 1 ? ` · ${p.rs.length} раза` : ''}</span><span class="said">${esc(p.said)}</span><span class="felt">${esc(p.felt)}</span></div>`).join('') : `<p class="muted">${empty}</p>`;
+  $('summary').innerHTML = `
+    <h2>Разбор</h2>
+    <div class="highlights">
+      ${worst ? `<p><span class="tag bad">Сильнее всего кормило дракона ${GEN[other]}</span> ${esc(worst.t)}</p>` : ''}
+      ${best ? `<p><span class="tag good">Больше всего помогло</span> ${esc(best.t)}</p>` : ''}
+    </div>
+    <div class="sumgrid">
+      <section class="sumcol"><h3>Как ${NAME[other]} слышал${G[other]==='f'?'а':''} ваши слова</h3>${pairs(heard, 'Вы больше работали со своим драконом, чем говорили.')}</section>
+      <section class="sumcol"><h3>Что ${NAME[other]} думал${G[other]==='f'?'а':''} про себя</h3>${pairs(inner, 'Партнёр почти ничего не говорил.')}</section>
+    </div>
+    <div><button class="btn" id="again2" type="button">Сыграть ещё раз</button></div>`;
+  $('summary').hidden = false;
+  $('again2').addEventListener('click', rematch);
+}
+$('again').addEventListener('click', rematch);
+
+/* ---------- hero status & bubbles ---------- */
+const curHero = {fire:'', ice:''};
+function heroState(side){ const l = V[side]; return l < 30 ? 'calm' : l < 60 ? 'tense' : 'peak'; }
+function stateName(side){
+  const l = V[side], g = App.game;
+  if (g && g.key[side] && l >= 6 && l < 60) return {t:'восстановление', rec:true};
+  if (l < 30) return {t:'спокойствие'};
+  if (l < 60) return {t: side==='fire' ? 'тревога' : 'раздражение'};
+  return {t: side==='fire' ? 'перегрев' : 'промерзание'};
+}
+function animHero(side, cls){
+  if (reduce) return;
+  const el = $('hin-'+side); el.classList.remove('throw','flinch','relief','swap'); void el.getBoundingClientRect(); el.classList.add(cls);
+}
+function drawStatus(){
+  for (const side of SIDES){
+    const st = heroState(side), key = st + G[side];
+    if (curHero[side] !== key){
+      const changed = !!curHero[side];
+      $('hin-'+side).innerHTML = heroSVG(side, G[side], st);
+      curHero[side] = key;
+      if (changed){ animHero(side, 'swap'); if (side === ME && performance.now() > busyUntil[side]) bubble(side, THOUGHT[side](st), true); }
+    }
+    const n = stateName(side);
+    $('num-'+side).textContent = Math.round(V[side]);
+    const se = $('st-'+side); se.textContent = n.t; se.classList.toggle('rec', !!n.rec);
+    $('fill-'+side).style.width = V[side].toFixed(1) + '%';
+    $('hud-'+side).classList.toggle('me', side === ME);
+  }
+}
+const HEAD = {fire:{x:250, y:82}, ice:{x:550, y:82}};
+const sayTimer = {}, busyUntil = {fire:0, ice:0};
+function bubble(side, text, think){
+  const el = $('say-'+side), p = HEAD[side];
+  el.textContent = text; el.classList.toggle('think', !!think);
+  el.style.left = (OX + p.x*SC) + 'px'; el.style.top = (OY + p.y*SC) + 'px';
+  el.classList.remove('off');
+  busyUntil[side] = performance.now() + 3800;
+  clearTimeout(sayTimer[side]); sayTimer[side] = setTimeout(() => el.classList.add('off'), 3800);
+}
+
+/* ---------- canvas loop ---------- */
+const cv = $('cv'), ctx = cv.getContext('2d');
+const bg = $('bg'), bctx = bg.getContext('2d');
+let DPR = 1, CW = 0, CH = 0, SC = 1, OX = 0, OY = 0;
+function resize(){
+  const r = cv.getBoundingClientRect(); DPR = Math.min(2, window.devicePixelRatio || 1);
+  CW = r.width; CH = r.height; cv.width = bg.width = Math.round(CW*DPR); cv.height = bg.height = Math.round(CH*DPR);
+  SC = Math.min(CW/800, CH/340); OX = (CW - 800*SC)/2; OY = (CH - 340*SC)/2;
+}
+new ResizeObserver(resize).observe(cv);
+
+const hexRGB = h => { const n = parseInt(h.slice(1),16); return [(n>>16)&255,(n>>8)&255,n&255]; };
+function mix(a, b, t){ t = Math.max(0, Math.min(1, t)); const A = hexRGB(a), B = hexRGB(b); return `rgb(${A.map((v,i)=>Math.round(v + (B[i]-v)*t)).join(',')})`; }
+function mix3(a, b, c, t){ return t < .5 ? mix(a, b, t*2) : mix(b, c, (t - .5)*2); }
+const FIRE_MTN = [[-400,232],[-260,150],[-130,200],[-10,138],[110,204],[220,158],[320,212],[400,232]];
+const ICE_MTN = [[400,232],[470,150],[565,206],[665,118],[765,196],[865,138],[995,210],[1110,160],[1200,200]];
+const FIRE_TREES = [[-330,272,1],[-210,266,.9],[-90,270,1.1],[20,262,.85],[95,268,1],[375,270,.9]];
+const ICE_PINES = [[415,270,.9],[455,262,1],[700,266,1.1],[745,270,.85],[800,262,1],[880,268,1.15],[960,262,.9],[1050,268,1]];
+const STARS = Array.from({length:26}, () => [400 + Math.random()*800, Math.random()*150, Math.random()*6]);
+function poly(b, pts, fill){ b.fillStyle = fill; b.beginPath(); pts.forEach(([x,y],i)=> i ? b.lineTo(x,y) : b.moveTo(x,y)); b.closePath(); b.fill(); }
+function drawLandscape(t){
+  const b = bctx, kf = shown.fire/100, ki = shown.ice/100;
+  b.setTransform(DPR,0,0,DPR,0,0);
+  const midX = OX + 400*SC;
+  const gf = b.createLinearGradient(0,0,0,CH); gf.addColorStop(0, mix('#3a2b45','#4a1d2a',kf)); gf.addColorStop(1, mix('#c46f5a','#ef5534',kf));
+  const gi = b.createLinearGradient(0,0,0,CH); gi.addColorStop(0, mix('#14213a','#2b3139',ki)); gi.addColorStop(1, mix('#4a7aa0','#6c7885',ki));
+  b.fillStyle = gf; b.fillRect(0,0,midX+1,CH);
+  b.fillStyle = gi; b.fillRect(midX,0,CW-midX,CH);
+  const sw = 80*SC;
+  for (let i=0;i<16;i++){ b.globalAlpha = (i+1)/17; b.fillRect(midX - sw + i*sw/16, 0, sw/16 + 1, CH); }
+  b.globalAlpha = 1;
+  b.setTransform(DPR*SC,0,0,DPR*SC,DPR*OX,DPR*OY);
+  for (const [x,y,ph] of STARS){ b.globalAlpha = Math.max(0,(1 - ki)*(0.4 + 0.4*Math.sin(t*1.5 + ph))); b.fillStyle = '#ffffff'; b.fillRect(x, y, 1.6, 1.6); }
+  b.globalAlpha = 1;
+  const sunY = 104 + kf*72, sunC = mix('#ffd39a','#ff6a3d',kf);
+  const halo = b.createRadialGradient(205, sunY, 10, 205, sunY, 90); halo.addColorStop(0, sunC); halo.addColorStop(1, 'rgba(0,0,0,0)');
+  b.globalAlpha = 0.45; b.fillStyle = halo; b.beginPath(); b.arc(205, sunY, 90, 0, Math.PI*2); b.fill();
+  b.globalAlpha = 1; b.fillStyle = sunC; b.beginPath(); b.arc(205, sunY, 32, 0, Math.PI*2); b.fill();
+  b.globalAlpha = 1 - ki*0.75; b.fillStyle = '#eef6fb'; b.beginPath(); b.arc(612, 78, 22, 0, Math.PI*2); b.fill();
+  b.fillStyle = mix('#14213a','#2b3139',ki); b.beginPath(); b.arc(622, 72, 18, 0, Math.PI*2); b.fill(); b.globalAlpha = 1;
+  const nC = 1 + Math.round(ki*5);
+  for (let i=0;i<nC;i++){
+    const x = 400 + ((t*(5 + i*1.5) + i*170) % 900) - 60, y = 46 + (i%3)*22;
+    b.globalAlpha = 0.35 + ki*0.5; b.fillStyle = mix('#4c6a88','#8a96a1',ki);
+    b.beginPath(); b.arc(x, y, 14, 0, Math.PI*2); b.arc(x + 16, y - 8, 17, 0, Math.PI*2); b.arc(x + 34, y, 13, 0, Math.PI*2); b.fill();
+    b.fillRect(x, y, 34, 13);
+  }
+  if (kf > 0.5){
+    b.globalAlpha = Math.min(0.5, (kf - 0.5)*1.3); b.fillStyle = '#6b3b3c';
+    for (let i=0;i<4;i++){ const x = -120 + ((t*7 + i*150) % 560), y = 70 + i*26; b.beginPath(); b.ellipse(x, y, 70, 16, 0, 0, Math.PI*2); b.fill(); }
+  }
+  b.globalAlpha = 1;
+  poly(b, [...FIRE_MTN, [400,340], [-400,340]], mix('#6a4656','#8a3530',kf));
+  poly(b, [...ICE_MTN, [1200,340], [400,340]], mix('#2f4b66','#56636f',ki));
+  const capH = 10 + ki*46;
+  for (let i=1;i<ICE_MTN.length-1;i++){
+    const [px,py] = ICE_MTN[i], [lx,ly] = ICE_MTN[i-1], [rx,ry] = ICE_MTN[i+1];
+    if (py > ly || py > ry) continue;
+    const fl = Math.min(0.9, capH/(ly - py)), fr = Math.min(0.9, capH/(ry - py));
+    const L = [px + (lx-px)*fl, py + (ly-py)*fl], Rr = [px + (rx-px)*fr, py + (ry-py)*fr];
+    poly(b, [[px,py], Rr, [(px + Rr[0])/2, (py + Rr[1])/2 - 4], [px, py + capH*0.75], [(px + L[0])/2, (py + L[1])/2 - 2], L], '#e6f0f6');
+  }
+  b.fillStyle = mix('#3f79a3','#cfe2ee',ki); b.fillRect(400, 236, 800, 26);
+  if (ki < 0.55){
+    b.globalAlpha = (0.55 - ki)*1.6; b.strokeStyle = '#a9dcff'; b.lineWidth = 2; b.lineCap = 'round';
+    for (let i=0;i<7;i++){ const x = 420 + i*110 + Math.sin(t + i)*8, y = 243 + (i%3)*6; b.beginPath(); b.moveTo(x, y); b.lineTo(x + 26, y); b.stroke(); }
+  } else {
+    b.globalAlpha = Math.min(1, (ki - 0.55)*2.5); b.strokeStyle = '#8fa9bb'; b.lineWidth = 1.5;
+    b.beginPath(); b.moveTo(430, 240); b.lineTo(470, 252); b.lineTo(520, 246); b.lineTo(560, 258);
+    b.moveTo(700, 238); b.lineTo(735, 249); b.lineTo(790, 244); b.moveTo(860, 256); b.lineTo(905, 244); b.lineTo(960, 252); b.stroke();
+  }
+  b.globalAlpha = 1;
+  b.fillStyle = mix3('#7a4f50','#97503d','#a8402c',kf);
+  b.beginPath(); b.moveTo(-400,272); b.quadraticCurveTo(-300,244,-200,266); b.quadraticCurveTo(-100,290,0,264); b.quadraticCurveTo(100,238,200,266); b.quadraticCurveTo(300,292,400,268); b.lineTo(400,340); b.lineTo(-400,340); b.closePath(); b.fill();
+  b.fillStyle = mix('#2c5249','#9fb3c2',ki);
+  b.beginPath(); b.moveTo(400,268); b.quadraticCurveTo(490,244,580,266); b.quadraticCurveTo(680,290,780,264); b.quadraticCurveTo(880,240,980,266); b.quadraticCurveTo(1100,290,1200,264); b.lineTo(1200,340); b.lineTo(400,340); b.closePath(); b.fill();
+  const canopy = mix3('#5f8a5e','#e0913f','#ff5a36',kf), canopyD = mix3('#4a6f4b','#b86d2c','#c9392a',kf);
+  for (const [x,y,s] of FIRE_TREES){
+    b.fillStyle = '#5a3a32'; b.fillRect(x - 3*s, y - 18*s, 6*s, 20*s);
+    b.fillStyle = canopyD; b.beginPath(); b.arc(x + 6*s, y - 24*s, 13*s, 0, Math.PI*2); b.fill();
+    b.fillStyle = canopy; b.beginPath(); b.arc(x - 4*s, y - 28*s, 15*s, 0, Math.PI*2); b.arc(x + 4*s, y - 36*s, 11*s, 0, Math.PI*2); b.fill();
+    if (kf > 0.78){
+      const fh = (8 + Math.sin(t*9 + x)*3)*s;
+      b.fillStyle = '#ffb347'; b.beginPath(); b.moveTo(x - 5*s, y - 44*s); b.quadraticCurveTo(x, y - 44*s - fh*2, x + 5*s, y - 44*s); b.fill();
+    }
+  }
+  const pine = mix('#24493f','#b9cfdc',ki);
+  for (const [x,y,s] of ICE_PINES){
+    b.fillStyle = '#3d2f2a'; b.fillRect(x - 2.5*s, y - 8*s, 5*s, 10*s);
+    for (let k=0;k<3;k++){
+      const ty = y - 8*s - k*13*s, wd = (16 - k*4)*s;
+      poly(b, [[x - wd, ty], [x + wd, ty], [x, ty - 22*s]], pine);
+      if (ki > 0.3){ b.globalAlpha = Math.min(1, (ki - 0.3)*2.5); poly(b, [[x - wd*0.35, ty - 22*s*0.65], [x + wd*0.35, ty - 22*s*0.65], [x, ty - 22*s]], '#eef5f9'); b.globalAlpha = 1; }
+    }
+  }
+  b.fillStyle = mix('#4c3236','#6e2a22',kf); b.fillRect(-400, 318, 800, 60);
+  b.fillStyle = mix('#203b38','#b8cad6',ki); b.fillRect(400, 318, 800, 60);
+  b.lineWidth = 2; b.lineCap = 'round'; b.lineJoin = 'round';
+  const birds = (k, x0, span, col) => {
+    const a = Math.max(0, Math.min(1, (0.42 - k)*4)); if (!a || reduce) return;
+    b.globalAlpha = a; b.strokeStyle = col;
+    for (let i=0;i<3;i++){
+      const x = x0 + ((t*(18 + i*4) + i*120) % span), y = 64 + i*15 + Math.sin(t*1.5 + i)*5, f = Math.sin(t*7 + i*2)*4;
+      b.beginPath(); b.moveTo(x - 7, y - f); b.quadraticCurveTo(x - 3, y - 3, x, y); b.quadraticCurveTo(x + 3, y - 3, x + 7, y - f); b.stroke();
+    }
+    b.globalAlpha = 1;
+  };
+  birds(kf, -80, 470, '#2a1e2a');
+  birds(ki, 420, 460, '#0f1a2a');
+}
+
+
+const COL = {
+  fire:{body:'#ff9a52', belly:'#ffd77a', wing:'#ffb36b', fx:['#ff8a3d','#ffc845','#ff6a2b']},
+  ice:{body:'#7cc4ef', belly:'#e9f7ff', wing:'#b3e1f8', fx:['#7cc4ef','#d8f1ff','#ffffff']}
+};
+const ANCHOR = {fire:{x:92, y:168, dir:1}, ice:{x:708, y:168, dir:-1}};
+const HAND = {fire:{x:300, y:268}, ice:{x:500, y:262}};
+const shown = {fire:START.fire, ice:START.ice}, pulse = {fire:0, ice:0}, lunge = {fire:0, ice:0}, ring = {fire:0, ice:0}, tame = {fire:0, ice:0};
+let parts = [], shots = [], floats = [];
+const pick = a => a[(Math.random()*a.length)|0];
+
+function dragon(side, l, t){
+  const a = ANCHOR[side], k = l/100, dir = a.dir;
+  const spd = 1.5 + k*1.8;
+  const ax = a.x + Math.sin(t*0.55 + (side==='ice'?2.1:0))*(10 + 16*k);
+  const ay = a.y + Math.sin(t*0.9 + (side==='ice'?1:0))*12 - k*18;
+  const N = 13, len = 60 + 150*k, R = (8 + 19*k)*(1 + pulse[side]*0.3), amp = 9 + 16*k;
+  const pts = [];
+  for (let i=0;i<N;i++){
+    const u = i/(N-1);
+    pts.push({x: ax + dir*(len*0.5 - u*len) + dir*lunge[side]*26*(1-u), y: ay + Math.sin(t*spd + u*5.2)*amp*(0.22 + u), r: R*(1 - 0.66*u)});
+  }
+  return {pts, R, dir, k};
+}
+function drawDragon(side, l, t){
+  const c = COL[side];
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.strokeStyle = INK;
+  if (l < 6){
+    const a = ANCHOR[side], cx = a.x, cy = a.y + 110, rr = 22;
+    ctx.lineWidth = 2.5;
+    for (let i=10;i>=0;i--){
+      const ang = Math.PI*0.2 + i/10*Math.PI*1.6, r = 9 - i*0.45;
+      ctx.fillStyle = c.body; ctx.beginPath(); ctx.arc(cx + Math.cos(ang)*rr*a.dir, cy + Math.sin(ang)*rr*0.7, r, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    }
+    ctx.fillStyle = c.body; ctx.beginPath(); ctx.arc(cx + a.dir*rr*0.9, cy - 4, 11, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + a.dir*(rr*0.9 + 1), cy - 6); ctx.quadraticCurveTo(cx + a.dir*(rr*0.9 + 5), cy - 2, cx + a.dir*(rr*0.9 + 9), cy - 6); ctx.stroke();
+    const zt = (t*0.6) % 1;
+    ctx.globalAlpha = 1 - zt; ctx.fillStyle = '#ffffff'; ctx.font = '700 14px Inter, sans-serif';
+    ctx.fillText('z', cx + a.dir*(rr + 10) + zt*8*a.dir, cy - 18 - zt*26); ctx.globalAlpha = 1;
+    return;
+  }
+  const {pts, R, dir, k} = dragon(side, l, t);
+  ctx.save(); ctx.shadowColor = side==='fire' ? 'rgba(255,90,60,.55)' : 'rgba(56,198,244,.5)'; ctx.shadowBlur = 8 + 22*k;
+  ctx.lineWidth = 2.5;
+  const wp = pts[3], flap = reduce ? 0.5 : Math.sin(t*(4.5 + 3*k))*0.5 + 0.5;
+  const wing = (sx, h1, h2, back) => {
+    ctx.fillStyle = c.wing;
+    ctx.beginPath(); ctx.moveTo(wp.x + sx, wp.y - R*0.3);
+    ctx.lineTo(wp.x + sx - dir*R*(back?1.4:0.8), wp.y - R*(h1 + 2.2*flap));
+    ctx.lineTo(wp.x + sx - dir*R*(back?2.1:1.5), wp.y - R*(h1*0.55 + 1.2*flap));
+    ctx.lineTo(wp.x + sx - dir*R*(back?3.2:2.6), wp.y - R*(h2 + 0.9*flap));
+    ctx.lineTo(wp.x + sx - dir*R*1.2, wp.y);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+  };
+  wing(-dir*R*0.4, 2.0, 0.9, true);
+  ctx.shadowBlur = 0;
+  const tail = pts[pts.length-1], pre = pts[pts.length-2];
+  const tx = tail.x - dir*R*0.9, ty = tail.y + (tail.y - pre.y)*0.6;
+  ctx.fillStyle = c.wing; ctx.beginPath(); ctx.moveTo(tail.x, tail.y - tail.r); ctx.lineTo(tx - dir*R*0.3, ty); ctx.lineTo(tail.x, tail.y + tail.r); ctx.lineTo(tx + dir*R*0.4, ty); ctx.closePath(); ctx.fill(); ctx.stroke();
+  for (let i=pts.length-1;i>=1;i--){
+    const p = pts[i];
+    ctx.fillStyle = c.body; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = c.belly; ctx.beginPath(); ctx.arc(p.x, p.y + p.r*0.38, p.r*0.5, 0, Math.PI*2); ctx.fill();
+    if (i % 2 === 0 && i < pts.length - 1){
+      ctx.fillStyle = c.wing; ctx.beginPath();
+      ctx.moveTo(p.x - p.r*0.45, p.y - p.r*0.82); ctx.lineTo(p.x, p.y - p.r*1.55); ctx.lineTo(p.x + p.r*0.45, p.y - p.r*0.82); ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+  }
+  wing(0, 2.6, 1.1, false);
+  const h = pts[0], hr = h.r*1.18;
+  ctx.fillStyle = c.belly;
+  ctx.beginPath(); ctx.moveTo(h.x - dir*hr*0.15, h.y - hr*0.75); ctx.lineTo(h.x - dir*hr*0.95, h.y - hr*1.75); ctx.lineTo(h.x - dir*hr*0.55, h.y - hr*0.55); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(h.x + dir*hr*0.2, h.y - hr*0.85); ctx.lineTo(h.x - dir*hr*0.25, h.y - hr*1.9); ctx.lineTo(h.x - dir*hr*0.15, h.y - hr*0.7); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = c.body; ctx.beginPath(); ctx.arc(h.x, h.y, hr, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  const open = pulse[side] > 0.08;
+  if (open){
+    ctx.fillStyle = INK; ctx.beginPath();
+    ctx.moveTo(h.x + dir*hr*0.5, h.y + hr*0.2); ctx.lineTo(h.x + dir*hr*1.75, h.y - hr*0.05); ctx.lineTo(h.x + dir*hr*1.55, h.y + hr*(0.45 + pulse[side]*0.6));
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+  }
+  ctx.fillStyle = c.body; ctx.beginPath(); ctx.ellipse(h.x + dir*hr*0.95, h.y - hr*(open?0.18:0.02), hr*0.82, hr*(open?0.42:0.55), 0, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = INK; ctx.beginPath(); ctx.arc(h.x + dir*hr*1.5, h.y - hr*0.22, Math.max(1.2, hr*0.08), 0, Math.PI*2); ctx.fill();
+  const er = Math.max(2.4, hr*0.33);
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(h.x + dir*hr*0.2, h.y - hr*0.35, er, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = INK; ctx.beginPath(); ctx.arc(h.x + dir*(hr*0.2 + er*0.35), h.y - hr*0.35, er*0.48, 0, Math.PI*2); ctx.fill();
+  if (k > 0.55){ ctx.beginPath(); ctx.moveTo(h.x + dir*(hr*0.2 - er), h.y - hr*0.35 - er*1.25); ctx.lineTo(h.x + dir*(hr*0.2 + er), h.y - hr*0.35 - er*0.75); ctx.stroke(); }
+  ctx.restore();
+  if (!reduce && Math.random() < 0.08 + k*0.5) emit(side==='fire' ? (Math.random()<0.6?'smoke':'spark') : 'snow', h.x + dir*hr*1.7, h.y - hr*0.25, pick(c.fx), dir);
+  if (!reduce && Math.random() < k*0.35) emit(side==='fire' ? 'spark' : 'shard', tail.x, tail.y, pick(c.fx), -dir);
+}
+function emit(kind, x, y, color, dir){
+  if (parts.length > 500) return;
+  const p = {x, y, color, kind, life:0}; const d = dir || 0;
+  if (kind==='spark'){ p.vx=(Math.random()-.5)*40 + d*20; p.vy=-30-Math.random()*50; p.max=0.6+Math.random()*0.5; p.size=1.6+Math.random()*2; }
+  else if (kind==='ember'){ p.vx=(Math.random()-.5)*10; p.vy=-14-Math.random()*18; p.max=2.5+Math.random()*2; p.size=1.5+Math.random()*1.5; }
+  else if (kind==='smoke'){ p.vx=d*(18+Math.random()*16); p.vy=-10-Math.random()*12; p.max=1.1+Math.random()*0.6; p.size=4+Math.random()*4; p.color='#5b4a4f'; }
+  else if (kind==='snow'){ p.vx=(Math.random()-.5)*12 + d*16; p.vy=12+Math.random()*18; p.max=2+Math.random()*1.5; p.size=1.6+Math.random()*2.2; }
+  else if (kind==='shard'){ p.vx=(Math.random()-.5)*26 + d*10; p.vy=10+Math.random()*24; p.max=0.8+Math.random()*0.6; p.size=2.4+Math.random()*2; }
+  else if (kind==='steam'){ p.vx=(Math.random()-.5)*14; p.vy=-12-Math.random()*14; p.max=2.4+Math.random()*1.5; p.size=8+Math.random()*10; p.color='#dfe7ef'; }
+  else if (kind==='burst'){ const a=Math.random()*Math.PI*2, v=40+Math.random()*90; p.vx=Math.cos(a)*v; p.vy=Math.sin(a)*v; p.max=0.45+Math.random()*0.35; p.size=2+Math.random()*2.5; }
+  else if (kind==='heart'){ p.vx=(Math.random()-.5)*30; p.vy=-30-Math.random()*30; p.max=1.1+Math.random()*0.5; p.size=5+Math.random()*3; }
+  parts.push(p);
+}
+function drawParts(dt){
+  ctx.save();
+  for (let i=parts.length-1;i>=0;i--){
+    const p = parts[i]; p.life += dt;
+    if (p.life >= p.max){ parts.splice(i,1); continue; }
+    p.x += p.vx*dt; p.y += p.vy*dt;
+    if (p.kind==='snow'||p.kind==='ember') p.vx += Math.sin(p.life*3 + p.y*0.05)*6*dt;
+    if (p.kind==='burst'){ p.vx *= 0.93; p.vy *= 0.93; }
+    if (p.kind==='smoke'){ p.size += dt*6; p.vx *= 0.97; }
+    const f = 1 - p.life/p.max;
+    ctx.globalCompositeOperation = (p.kind==='smoke'||p.kind==='heart') ? 'source-over' : 'lighter';
+    ctx.globalAlpha = p.kind==='steam' ? f*0.4 : p.kind==='smoke' ? f*0.55 : p.kind==='ember' ? f*0.7 : f;
+    ctx.fillStyle = p.color;
+    if (p.kind==='shard'){
+      ctx.beginPath(); ctx.moveTo(p.x, p.y - p.size); ctx.lineTo(p.x + p.size*0.6, p.y); ctx.lineTo(p.x, p.y + p.size); ctx.lineTo(p.x - p.size*0.6, p.y); ctx.closePath(); ctx.fill();
+    } else if (p.kind==='heart'){
+      const s = p.size; ctx.beginPath(); ctx.moveTo(p.x, p.y + s*0.6);
+      ctx.bezierCurveTo(p.x - s*1.2, p.y - s*0.2, p.x - s*0.5, p.y - s*1.1, p.x, p.y - s*0.4);
+      ctx.bezierCurveTo(p.x + s*0.5, p.y - s*1.1, p.x + s*1.2, p.y - s*0.2, p.x, p.y + s*0.6); ctx.fill();
+    } else {
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+    }
+  }
+  ctx.restore(); ctx.globalAlpha = 1;
+}
+function mouthPos(side, t){
+  const l = shown[side];
+  if (l < 6){ const a = ANCHOR[side]; return {x:a.x + a.dir*30, y:a.y + 104}; }
+  const {pts} = dragon(side, l, t); const h = pts[0], hr = h.r*1.18;
+  return {x:h.x + ANCHOR[side].dir*hr*1.5, y:h.y};
+}
+function shoot(from, to, type, onHit, fromDragon){ const src = fromDragon ? mouthPos(from, performance.now()/1000) : {x:HAND[from].x, y:HAND[from].y - 10}; shots.push({from, to, type, sx:src.x, sy:src.y, t:0, dur: reduce ? 0.2 : 0.85, onHit, spin:0}); }
+function drawShots(dt, t){
+  for (let i=shots.length-1;i>=0;i--){
+    const s = shots[i]; s.t += dt/s.dur; s.spin += dt*8;
+    const u = Math.min(1, s.t), tg = mouthPos(s.to, t);
+    const e = u < .5 ? 2*u*u : 1 - Math.pow(-2*u + 2, 2)/2;
+    const x = s.sx + (tg.x - s.sx)*e, y = s.sy + (tg.y - s.sy)*e - Math.sin(Math.PI*e)*110;
+    ctx.save(); ctx.strokeStyle = INK; ctx.lineWidth = 2.5; ctx.lineJoin = 'round';
+    if (s.type === 'calm'){
+      ctx.shadowColor = '#3ee08f'; ctx.shadowBlur = 18;
+      ctx.fillStyle = '#58eb93'; ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+      ctx.shadowBlur = 0; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x - 3, y - 3, 2.6, 0, Math.PI*2); ctx.fill();
+      if (!reduce && Math.random() < 0.6) emit('heart', x, y, '#ff7ce0');
+    } else if (s.from === 'fire'){
+      ctx.shadowColor = '#ff6a2b'; ctx.shadowBlur = 20;
+      ctx.fillStyle = '#ff8a3d'; ctx.beginPath();
+      ctx.moveTo(x + 10, y); ctx.quadraticCurveTo(x, y - 14, x - 16, y - 2); ctx.quadraticCurveTo(x, y + 12, x + 10, y); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.shadowBlur = 0; ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(x + 2, y, 4, 0, Math.PI*2); ctx.fill();
+      if (!reduce) for (let k=0;k<2;k++) emit('spark', x, y, pick(COL.fire.fx));
+    } else {
+      ctx.shadowColor = '#38c6f4'; ctx.shadowBlur = 20;
+      ctx.translate(x, y); ctx.rotate(s.spin);
+      ctx.fillStyle = '#d8f1ff'; ctx.beginPath(); ctx.moveTo(0,-12); ctx.lineTo(7,0); ctx.lineTo(0,12); ctx.lineTo(-7,0); ctx.closePath(); ctx.fill(); ctx.stroke();
+      if (!reduce) emit('snow', x, y, pick(COL.ice.fx));
+    }
+    ctx.restore();
+    if (s.t >= 1){
+      shots.splice(i,1);
+      const n = reduce ? 6 : 22;
+      for (let k=0;k<n;k++) emit(s.type==='calm' ? (k%3?'burst':'heart') : 'burst', tg.x, tg.y, s.type==='calm' ? (k%3?'#58eb93':'#ff7ce0') : (s.from==='fire' ? pick(COL.fire.fx) : pick(COL.ice.fx)));
+      pulse[s.to] = 1; lunge[s.to] = s.type==='feed' ? 1 : 0;
+      s.onHit && s.onHit();
+    }
+  }
+}
+function floatNum(side, text, color){ const p = mouthPos(side, performance.now()/1000); floats.push({x:p.x, y:p.y - 22, text, color, life:0}); }
+function drawFloats(dt){
+  ctx.font = '800 20px Inter, sans-serif'; ctx.textAlign = 'center';
+  for (let i=floats.length-1;i>=0;i--){
+    const f = floats[i]; f.life += dt; if (f.life > 1.3){ floats.splice(i,1); continue; }
+    const y = f.y - f.life*30;
+    ctx.globalAlpha = Math.min(1, (1.3 - f.life)*2); ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(12,13,17,.85)'; ctx.strokeText(f.text, f.x, y); ctx.fillStyle = f.color; ctx.fillText(f.text, f.x, y);
+  }
+  ctx.globalAlpha = 1; ctx.textAlign = 'start';
+}
+function drawAmbient(){
+  if (reduce) return;
+  const kf = shown.fire/100, ki = shown.ice/100;
+  if (Math.random() < 0.12 + kf*0.3) emit('ember', 20 + Math.random()*360, 330, pick(COL.fire.fx));
+  if (Math.random() < 0.12 + ki*0.25) emit('snow', 420 + Math.random()*370, -5, pick(COL.ice.fx));
+  if (Math.random() < 0.15 + kf*0.9) emit('spark', HAND.fire.x + (Math.random()-.5)*8, HAND.fire.y - 6, pick(COL.fire.fx));
+  if (kf > 0.6 && Math.random() < kf*0.6) emit('spark', 250 + (Math.random()-.5)*60, 140, pick(COL.fire.fx));
+  if (Math.random() < 0.08 + ki*0.5) emit('snow', 500 + (Math.random()-.5)*160, 90 + Math.random()*40, pick(COL.ice.fx));
+}
+const LEASH = {fire:{x:204, y:262}, ice:{x:596, y:262}};
+function drawLeash(side, t){
+  const h = LEASH[side], l = shown[side], k = l/100;
+  let p;
+  if (l < 6){ const a = ANCHOR[side]; p = {x:a.x + a.dir*18, y:a.y + 112}; }
+  else { const {pts} = dragon(side, l, t); p = pts[3]; }
+  const strain = (k > 0.55 && !reduce) ? Math.sin(t*14)*(k - 0.55)*16 : 0;
+  const mx = (h.x + p.x)/2, my = Math.max(h.y, p.y) + 24 - k*34 + strain;
+  ctx.save(); ctx.lineCap = 'round';
+  ctx.strokeStyle = INK; ctx.lineWidth = 5.5;
+  ctx.beginPath(); ctx.moveTo(h.x, h.y); ctx.quadraticCurveTo(mx, my, p.x, p.y); ctx.stroke();
+  if (tame[side] > 0.05){ ctx.strokeStyle = '#6ff0ae'; ctx.shadowColor = '#3ee08f'; ctx.shadowBlur = 14; }
+  else ctx.strokeStyle = mix('#e8d9b0', '#ff7a6a', Math.max(0, (k - 0.5)*2));
+  ctx.lineWidth = 2.6;
+  ctx.beginPath(); ctx.moveTo(h.x, h.y); ctx.quadraticCurveTo(mx, my, p.x, p.y); ctx.stroke();
+  ctx.restore();
+}
+function drawRings(dt, t){
+  for (const side of ['fire','ice']){
+    if (tame[side] <= 0) continue;
+    tame[side] = Math.max(0, tame[side] - dt*0.75);
+    const a = ANCHOR[side], m = mouthPos(side, t);
+    const cx = (m.x + a.x)/2, cy = shown[side] < 6 ? a.y + 104 : a.y - 12, r = 36 + (1 - tame[side])*64;
+    ctx.save(); ctx.globalAlpha = tame[side]; ctx.strokeStyle = '#6ff0ae'; ctx.shadowColor = '#3ee08f'; ctx.shadowBlur = 16; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.stroke(); ctx.restore();
+    if (!reduce && Math.random() < tame[side]*0.8) emit('burst', cx + (Math.random()-.5)*r, cy + (Math.random()-.5)*r*0.6, '#58eb93');
+  }
+}
+function drawFinale(){
+  if (!FINALE_WIN) return;
+  if (!reduce && Math.random() < 0.6) emit('steam', 400 + (Math.random()-.5)*60, 250, '#dfe7ef');
+  const cols = ['#ff7a45','#ffc845','#3ee08f','#38c6f4','#7c6cff'];
+  ctx.save(); ctx.lineWidth = 6; ctx.globalAlpha = 0.6;
+  cols.forEach((c,i)=>{ ctx.strokeStyle = c; ctx.shadowColor = c; ctx.shadowBlur = 10; ctx.beginPath(); ctx.arc(400, 300, 170 - i*8, Math.PI*1.12, Math.PI*1.88); ctx.stroke(); });
+  ctx.restore();
+}
+
+
+/* ---------- render loop + routing ---------- */
+let last = performance.now();
+function frame(now){
+  const dt = Math.min(0.05, (now - last)/1000); last = now; const t = now/1000;
+  if (App.screen === 'game' && App.game && CW > 0){
+    for (const side of SIDES){
+      shown[side] += (V[side] - shown[side]) * Math.min(1, dt*3.5);
+      pulse[side] = Math.max(0, pulse[side] - dt*1.8);
+      lunge[side] = Math.max(0, lunge[side] - dt*2.5);
+    }
+    drawLandscape(t);
+    ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,CW,CH);
+    ctx.setTransform(DPR*SC,0,0,DPR*SC,DPR*OX,DPR*OY);
+    drawFinale(); drawAmbient();
+    drawLeash('fire', t); drawLeash('ice', t);
+    drawDragon('fire', shown.fire, t); drawDragon('ice', shown.ice, t);
+    drawParts(dt); drawRings(dt, t); drawShots(dt, t); drawFloats(dt);
+  }
+  requestAnimationFrame(frame);
+}
+$('botBtn').addEventListener('click', () => { homeErr(''); startBot(); });
+$('createBtn').addEventListener('click', createRoom);
+function joinByCode(){
+  const c = $('codeIn').value.trim().toUpperCase();
+  if (!/^[A-Z0-9]{4}$/.test(c)){ homeErr('Введите код из 4 символов.'); return; }
+  homeErr(''); if (location.hash.slice(1).toUpperCase() === c) route(); else location.hash = c;
+}
+$('joinBtn').addEventListener('click', joinByCode);
+$('codeIn').addEventListener('keydown', e => { if (e.key === 'Enter') joinByCode(); });
+$('exit').addEventListener('click', () => { leave(); history.replaceState(null, '', location.pathname); showScreen('home'); renderHome(); });
+$('jBack').addEventListener('click', () => { leave(); history.replaceState(null, '', location.pathname); showScreen('home'); renderHome(); });
+$('restart').addEventListener('click', rematch);
+function route(){
+  const c = (location.hash || '').slice(1).toUpperCase();
+  if (/^[A-Z0-9]{4}$/.test(c)){ enterRoom(c); return; }
+  if (App.mode === 'room') leave();
+  if (App.mode !== 'bot'){ showScreen('home'); renderHome(); }
+}
+addEventListener('hashchange', route);
+$('tileFire').innerHTML = IC.flame; $('tileIce').innerHTML = IC.snow;
+route();
+requestAnimationFrame(t => { last = t; frame(t); });
+
+})();
+
+</script>
+</body>
+</html>
