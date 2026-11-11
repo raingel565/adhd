@@ -322,13 +322,34 @@ h1{margin:0; font-size:clamp(24px,3.4vw,32px); font-weight:800; letter-spacing:-
 .aprop{display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:14px; background:rgba(255,255,255,.04); border:1px solid var(--line)}
 .aprop span{flex:1; min-width:0}
 .aprop.dim span{color:var(--muted); font-style:italic}
+.helpbtn{width:30px; height:30px; flex:none; font:800 15px var(--f); color:#c9bcff; border-color:rgba(170,150,255,.45); background:rgba(124,108,255,.12)}
+.helpbtn:hover{background:rgba(124,108,255,.24)}
+.modal{position:fixed; inset:0; z-index:50; display:grid; place-items:center; background:rgba(5,6,10,.6); overflow-y:auto;
+  padding-block:max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-bottom, 0px));
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); animation:pop .25s ease-out}
+.mcard{max-width:600px; width:100%; border-radius:24px; padding:20px 22px; display:grid; gap:12px; background:rgba(28,30,38,.94)}
+.mcard p{margin:0; color:#d6dae3; line-height:1.55}
+.mcard b{color:var(--text)}
+.mhead{display:flex; align-items:center; justify-content:space-between; gap:10px}
+.mhead h2{margin:0; font-size:20px; font-weight:800}
+.mtwo{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px}
+.mi{padding:12px 14px; border-radius:14px; background:rgba(255,255,255,.04); border:1px solid var(--line); display:grid; gap:4px; font-size:14px; color:#cfd4de}
+.mi.f b{color:#ffa07a} .mi.i b{color:#7fdcff}
+.mread{padding:12px 14px; border-radius:14px; background:rgba(124,108,255,.10); border:1px dashed rgba(170,150,255,.45); display:grid; gap:4px; font-size:14px}
+.mread b{color:#c9bcff}
+.mread ul{margin:0; padding-left:18px; display:grid; gap:4px; color:#e6e1ff}
+.noscroll{overflow:hidden}
+.aboutline{margin:12px 0 0; text-align:center; color:var(--muted); font-size:13.5px}
+.linkbtn{font:600 13.5px var(--f); color:#c9bcff; background:none; border:0; padding:0; cursor:pointer; text-decoration:underline; text-underline-offset:3px}
+.linkbtn:focus-visible{outline:2px solid #a48bff; outline-offset:2px}
+@media (max-width:760px){ .mtwo{grid-template-columns:minmax(0,1fr)} }
 
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="bar">
-    <div class="brand"><h1>Драконы</h1><span class="pill">Сутки тишины</span></div>
+    <div class="brand"><h1>Драконы</h1><span class="pill">Сутки тишины</span><button class="ibtn helpbtn" id="aboutBtn" type="button" aria-label="О чём эта игра" title="О чём эта игра">?</button></div>
     <div class="icons" id="tools" hidden>
       <button class="ibtn" id="restart" type="button" aria-label="Начать заново" title="Начать заново"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v4h4"/></svg></button>
       <button class="ibtn" id="exit" type="button" aria-label="Выйти в меню" title="Выйти в меню"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h4v16h-4"/><path d="M10 8l-4 4 4 4"/><path d="M6 12h10"/></svg></button>
@@ -431,7 +452,26 @@ h1{margin:0; font-size:clamp(24px,3.4vw,32px); font-weight:800; letter-spacing:-
     </div>
     <section class="sum glass" id="summary" hidden aria-label="Разбор"></section>
     <section class="journal glass agree" id="agree" hidden aria-label="Договорённости"></section>
+    <p class="aboutline" id="aboutLine" hidden>Огонь и Лёд — это образы двух стилей привязанности. <button class="linkbtn" id="aboutLink" type="button">Что за ними стоит?</button></p>
     <p class="note">Иллюстрация, а не тест или диагноз.</p>
+  </div>
+</div>
+
+<div class="modal" id="about" hidden role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+  <div class="mcard glass">
+    <div class="mhead"><h2 id="aboutTitle">О чём эта игра</h2><button class="ibtn" id="aboutClose" type="button" aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <p>Огонь и Лёд — упрощённые образы двух стилей привязанности из психологии: <b>тревожного</b> и <b>избегающего</b>.</p>
+    <div class="mtwo">
+      <div class="mi f"><b>Огонь · тревожный стиль</b><span>В трудный момент тянется к близкому. Тишина и дистанция пугают, хочется убедиться, что связь на месте.</span></div>
+      <div class="mi i"><b>Лёд · избегающий стиль</b><span>В трудный момент уходит в себя. Давление и расспросы заставляют закрыться, силы восстанавливаются в одиночестве.</span></div>
+    </div>
+    <p>Такие люди часто притягиваются друг к другу и раскачивают друг друга: чем сильнее один тянется, тем дальше уходит другой. Поэтому в игре дракон каждого кормится не партнёром, а собственной реакцией на него.</p>
+    <p>Ходы, которые усыпляют драконов, — это то, что психологи называют <b>надёжной привязанностью</b>: говорить о чувствах без упрёков, предупреждать о тишине и возвращаться.</p>
+    <p>Это не диагноз и не приговор. Стиль может меняться, а в разных отношениях человек ведёт себя по-разному. Поэтому опрос показывает шкалу, а не тип.</p>
+    <div class="mread"><b>Что почитать</b>
+      <ul><li>Амир Левин и Рэйчел Хеллер, «Привязанность» (Attached)</li><li>Сью Джонсон, «Обними меня крепче» (Hold Me Tight)</li></ul>
+    </div>
+    <p class="muted small">Если в отношениях есть унижения, угрозы или контроль, это уже не про разные стили, и игра здесь не поможет. Лучше обратиться к психологу.</p>
   </div>
 </div>
 
@@ -1391,6 +1431,7 @@ function agreedList(){
 }
 function renderAgree(){
   const el = $('agree');
+  $('aboutLine').hidden = $('summary').hidden;
   if ($('summary').hidden){ el.hidden = true; AG.sig = ''; return; }
   const mine = agreeOf(ME), other = OTHER[ME], theirs = agreeOf(other);
   if (!mine.done){
@@ -1498,6 +1539,16 @@ function saveAgreeImage(){
   document.body.appendChild(a); a.click(); a.remove();
   const m = $('agMsg'); m.textContent = 'Картинка сохранена в загрузки.'; m.hidden = false;
 }
+
+/* ---------- about ---------- */
+let aboutFrom = null;
+function openAbout(){ aboutFrom = document.activeElement; $('about').hidden = false; document.body.classList.add('noscroll'); $('aboutClose').focus(); }
+function closeAbout(){ $('about').hidden = true; document.body.classList.remove('noscroll'); aboutFrom && aboutFrom.focus && aboutFrom.focus(); }
+$('aboutBtn').addEventListener('click', openAbout);
+$('aboutLink').addEventListener('click', openAbout);
+$('aboutClose').addEventListener('click', closeAbout);
+$('about').addEventListener('click', e => { if (e.target.id === 'about') closeAbout(); });
+addEventListener('keydown', e => { if (e.key === 'Escape' && !$('about').hidden) closeAbout(); });
 
 const hexRGB = h => { const n = parseInt(h.slice(1),16); return [(n>>16)&255,(n>>8)&255,n&255]; };
 function mix(a, b, t){ t = Math.max(0, Math.min(1, t)); const A = hexRGB(a), B = hexRGB(b); return `rgb(${A.map((v,i)=>Math.round(v + (B[i]-v)*t)).join(',')})`; }
