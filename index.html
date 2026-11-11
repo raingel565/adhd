@@ -12,7 +12,7 @@
 body{margin:0}
 [hidden]{display:none!important}
 
-/* Layout (online): home (role+gender, bot/room) → lobby/join → sticky glass scene + reaction → my panel + partner status → summary. Dark-only.
+/* Layout (online): home → lobby/join → sticky scene + reaction → journal/consent or my panel + partner status → summary. Dark-only.
    Previous: compact top bar → setup (gender) → sticky glass scene (landscape + heroes + dragons, HUD meters and speech bubbles inside) + one-line reaction → two glass panels with neon edge, pill tabs and icon-tile rows. Deliberately dark-only. */
 :root{
   --bg:#0c0d11; --glass:rgba(44,47,56,.62); --glass-2:rgba(66,70,82,.5); --line:rgba(255,255,255,.09); --line-2:rgba(255,255,255,.16);
@@ -224,6 +224,40 @@ h1{margin:0; font-size:clamp(24px,3.4vw,32px); font-weight:800; letter-spacing:-
   .mine,.sumgrid{grid-template-columns:minmax(0,1fr)}
   .join{margin-left:0}
 }
+.small{font-size:12.5px}
+.journal{border-radius:24px; padding:16px 18px; display:grid; gap:12px; min-width:0; position:relative; animation:pop .4s ease-out}
+.journal::before{content:""; position:absolute; left:-1px; top:22px; bottom:22px; width:3px; border-radius:3px; background:linear-gradient(180deg,#a48bff,#ff7ce0); box-shadow:0 0 16px #a48bff}
+.jhead{display:flex; align-items:center; gap:10px}
+.jhead h3{margin:0; font-size:17px; font-weight:800}
+.jhint{margin:0; color:var(--muted); font-size:13px}
+.jq{display:grid; gap:8px; padding:12px; border-radius:16px; background:rgba(255,255,255,.04); border:1px solid var(--line)}
+.jwho{margin:0; display:flex; align-items:center; gap:10px; font-size:14px; color:var(--muted)}
+.jwho b{color:var(--text); font-weight:600}
+.jwho .tile{width:28px; height:28px; border-radius:9px} .jwho .tile svg{width:15px; height:15px}
+.jask{margin:0; font-weight:700; color:#e6e1ff}
+.chips{display:flex; flex-wrap:wrap; gap:6px}
+.chip{font:600 13px var(--f); color:var(--muted); background:transparent; border:1px solid var(--line-2); border-radius:999px; padding:6px 12px; cursor:pointer; transition:background .15s, color .15s, border-color .15s}
+.chip:hover{border-color:rgba(255,255,255,.3)}
+.chip[aria-pressed="true"]{color:#fff; background:rgba(124,108,255,.35); border-color:rgba(170,150,255,.7); box-shadow:0 0 12px rgba(124,108,255,.35)}
+.chip:focus-visible,.jtext:focus-visible,.citem input:focus-visible{outline:2px solid #a48bff; outline-offset:2px}
+.jtext{font:500 14px var(--f); color:var(--text); background:rgba(0,0,0,.3); border:1px solid var(--line-2); border-radius:12px; padding:10px 12px; width:100%}
+.jtext::placeholder{color:#737a88; font-style:italic}
+.jbtns{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+.jsave{padding:11px 22px; font-size:15px; background:linear-gradient(180deg,#a48bff,#6a4be0); box-shadow:0 8px 24px rgba(106,75,224,.45), inset 0 1px 0 rgba(255,255,255,.35)}
+.clist{display:grid; gap:8px}
+.citem{display:flex; gap:12px; align-items:flex-start; padding:10px 12px; border-radius:14px; background:rgba(255,255,255,.04); border:1px solid var(--line); cursor:pointer}
+.citem input{width:18px; height:18px; margin-top:2px; accent-color:#a48bff; flex:none}
+.citem > span{display:grid; gap:3px; min-width:0}
+.citem .r{font-size:11.5px; color:var(--muted)}
+.citem .felt{font-style:italic; color:#e6e1ff}
+.pair.own{border-color:rgba(170,150,255,.35); background:rgba(124,108,255,.08)}
+.pair .felt.dim{color:var(--muted)}
+.pair .by{font-size:11.5px; color:var(--muted)}
+.ptags{display:flex; flex-wrap:wrap; gap:5px}
+.ptag{font-size:12px; font-weight:600; padding:2px 9px; border-radius:999px; background:rgba(124,108,255,.25); color:#e6e1ff}
+.btn.danger{color:#ff9a9a; border-color:rgba(255,97,97,.35)}
+.btn.danger:hover{border-color:rgba(255,97,97,.6)}
+.jex{margin:-2px 0 0; font-size:12.5px; color:var(--muted); font-style:italic}
 
 </style>
 </head>
@@ -262,6 +296,7 @@ h1{margin:0; font-size:clamp(24px,3.4vw,32px); font-weight:800; letter-spacing:-
       <div class="join"><input class="code-in" id="codeIn" maxlength="4" placeholder="КОД" autocomplete="off" aria-label="Код комнаты"><button class="btn" id="joinBtn" type="button">Войти</button></div>
     </div>
     <p class="err" id="homeErr" hidden></p>
+    <p class="muted small">После каждого раунда игра спросит, что вы почувствовали. В комнате записи хранятся сутки, потом она закрывается. Удалить раньше можно кнопкой в разборе.</p>
   </section>
 
   <section class="lobby glass" id="join" hidden aria-labelledby="jTitle">
@@ -323,6 +358,8 @@ h1{margin:0; font-size:clamp(24px,3.4vw,32px); font-weight:800; letter-spacing:-
     </section>
 
     <div class="mine">
+      <section class="journal glass" id="journal" hidden aria-label="Что вы почувствовали"></section>
+      <section class="journal glass" id="consent" hidden aria-label="Что показать партнёру"></section>
       <section class="panel glass" id="panel" aria-label="Ваши действия"></section>
       <aside class="side glass" id="partner" aria-label="Партнёр"></aside>
     </div>
@@ -519,7 +556,7 @@ function botPick(g, side){
 }
 
 /* ---------- app state ---------- */
-const App = {mode:null, code:null, ref:null, room:null, game:null, local:null, animating:false, lastPlayed:0,
+const App = {journal:{}, deleted:false, mode:null, code:null, ref:null, room:null, game:null, local:null, animating:false, lastPlayed:0,
   introDone:false, tab:'main', timers:[], joinSide:null, presence:null, screen:'home'};
 let V = {...START};
 let FINALE_WIN = false;
@@ -577,7 +614,7 @@ document.querySelectorAll('#home .seg button').forEach(b => b.addEventListener('
 
 /* ---------- bot mode ---------- */
 function startBot(){
-  leave(); App.mode = 'bot'; App.local = newGame(); App.introDone = false; App.lastPlayed = 0; App.tab = 'main';
+  leave(); App.mode = 'bot'; App.journal = {}; App.local = newGame(); App.introDone = false; App.lastPlayed = 0; App.tab = 'main';
   V = {...App.local.lvl}; resetScene(); showScreen('game'); onGame(clone(App.local));
 }
 function scheduleBot(){
@@ -612,7 +649,7 @@ function enterRoom(code){
 }
 function onRoom(r){
   if (App.mode !== 'room') return;
-  if (!r){ const c = App.code; leave(); history.replaceState(null, '', location.pathname); showScreen('home'); renderHome(); homeErr(`Комната ${c} не найдена.`); return; }
+  if (!r){ const c = App.code, del = App.deleted; App.deleted = false; const wasDone = App.game && App.game.done; leave(true); history.replaceState(null, '', location.pathname); showScreen('home'); renderHome(); homeErr(del ? 'Комната и записи удалены.' : wasDone ? 'Партнёр удалил комнату и записи.' : `Комната ${c} не найдена или уже закрыта.`); return; }
   App.room = r;
   if (r.genders) G = {fire:r.genders.fire || 'm', ice:r.genders.ice || 'f'};
   const pl = r.players || {};
@@ -676,19 +713,19 @@ $('copyBtn').addEventListener('click', () => {
 function selectLink(){ const r = document.createRange(); r.selectNodeContents($('lLink')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
 
 /* ---------- leaving ---------- */
-function leave(){
+function leave(gone){
   App.timers.forEach(clearTimeout); App.timers = [];
   if (App.ref){
     App.ref.off();
-    if (App.presence){ App.presence.conn.off('value', App.presence.h); App.presence.pref.onDisconnect().cancel(); App.presence.pref.set(false).catch(()=>{}); }
+    if (App.presence){ App.presence.conn.off('value', App.presence.h); App.presence.pref.onDisconnect().cancel(); if (!gone) App.presence.pref.set(false).catch(()=>{}); }
   }
   App.ref = null; App.room = null; App.presence = null; App.game = null; App.local = null; App.mode = null; App.animating = false;
-  FINALE_WIN = false; $('finale').hidden = true; $('summary').hidden = true;
+  FINALE_WIN = false; $('finale').hidden = true; $('summary').hidden = true; $('journal').hidden = true; $('consent').hidden = true; JR.round = 0; SUM_SIG = '';
 }
 function resetScene(){
   parts = []; shots = []; floats = []; curHero.fire = curHero.ice = '';
   for (const s of SIDES){ shown[s] = V[s]; pulse[s] = lunge[s] = tame[s] = 0; $('say-'+s).classList.add('off'); }
-  FINALE_WIN = false; $('finale').hidden = true; $('summary').hidden = true;
+  FINALE_WIN = false; $('finale').hidden = true; $('summary').hidden = true; $('journal').hidden = true; $('consent').hidden = true; JR.round = 0; SUM_SIG = '';
 }
 
 /* ---------- game flow ---------- */
@@ -696,7 +733,7 @@ function phaseOpen(){
   if (!App.game || App.game.done) return false;
   return App.mode === 'bot' ? App.introDone : (App.room && App.room.phase === 'play');
 }
-function canPick(){ return phaseOpen() && !App.animating && !(App.game.picks && App.game.picks[ME]); }
+function canPick(){ return phaseOpen() && !App.animating && !journalRound() && !(App.game.picks && App.game.picks[ME]); }
 function choose(id){
   if (!canPick()) return;
   if (App.mode === 'bot'){
@@ -734,7 +771,7 @@ function visualEvent(ev){
   const a = BY_ID[ev.id], side = ev.side, other = OTHER[side];
   const col = s => s === 'fire' ? '#ff9b6b' : '#7fdcff';
   const num = v => (v > 0 ? '+' : '−') + Math.abs(v);
-  bubble(side, a.say(), a.think);
+  bubble(side, a.think && side !== ME ? '…' : a.say(), a.think);
   setReactText(ev.kind || a.kind, `${NAME[side]} · ${TAGS[a.kind]}`, (ev.relapse ? 'Срыв. ' : '') + a.why());
   if (side === ME && a.self) later(() => bubble(side, a.self(), true), 2100);
   const feel = () => { if (other === ME && a.feel) bubble(other, a.feel(), true); };
@@ -774,7 +811,7 @@ $('go').addEventListener('click', () => {
 });
 function rematch(){
   if (App.mode === 'bot'){ startBot(); return; }
-  App.ref.transaction(r => { if (!r) return r; r.game = newGame(); r.phase = 'intro'; r.ready = {fire:false, ice:false}; return r; });
+  App.ref.transaction(r => { if (!r) return r; r.game = newGame(); r.phase = 'intro'; r.ready = {fire:false, ice:false}; delete r.journal; delete r.revealed; return r; });
 }
 
 /* ---------- panel, partner, reaction ---------- */
@@ -807,17 +844,19 @@ $('panel').addEventListener('click', e => {
 function renderPartner(){
   const g = App.game, other = OTHER[ME];
   let st, cls = '';
-  if (g.done) st = 'Игра окончена';
+  const pj = App.mode === 'room' && g.last && !(App.room.journal && App.room.journal[other] && App.room.journal[other]['r'+g.last.round]);
+  if (g.done) st = App.mode === 'room' && !revealedOf(other) ? (pj ? 'Записывает чувства…' : 'Решает, что показать') : 'Игра окончена', cls = st === 'Игра окончена' ? '' : 'think';
   else if (App.animating) st = 'Раскрываем ходы';
   else if (App.mode === 'room' && App.room && App.room.players && App.room.players[other] && App.room.players[other].online === false){ st = 'Не в сети'; cls = 'off'; }
   else if (!phaseOpen()) st = 'Готовится';
   else if (g.picks[other]){ st = 'Ход выбран'; cls = 'ok'; }
+  else if (pj){ st = 'Записывает чувства…'; cls = 'think'; }
   else { st = App.mode === 'bot' ? 'Бот думает…' : 'Выбирает ход…'; cls = 'think'; }
   $('partner').innerHTML = `
     <div class="ph"><span class="tile ${other==='fire'?'t-or':'t-bl'}">${other==='fire'?IC.flame:IC.snow}</span><h3>${NAME[other]}</h3><span class="trait">${App.mode==='bot'?'бот':'партнёр'}</span></div>
     <p class="pst ${cls}"><span class="dotp"></span>${st}</p>
     <p class="rnd">Раунд ${Math.min(g.round, MAX_ROUNDS)} из ${MAX_ROUNDS}</p>
-    <p class="hintp">Вы не видите, что выбрал партнёр, пока ходы не раскроются. Его мысли откроются в разборе.</p>`;
+    <p class="hintp">Вы не видите, что выбрал партнёр, пока ходы не раскроются. Его записи о чувствах откроются в разборе.</p>`;
 }
 function setReactText(kind, tag, msg){
   const el = $('react');
@@ -827,14 +866,16 @@ function setReactText(kind, tag, msg){
 function renderReactIdle(){
   if (App.animating) return;
   const g = App.game;
-  if (g.done) setReactText(g.outcome === 'win' ? 'good' : 'bad', g.outcome === 'win' ? 'Победа' : 'Конец игры', 'Разбор раундов ниже.');
+  if (g.done && journalRound()) setReactText('inner', g.outcome === 'win' ? 'Победа' : 'Конец игры', 'Запишите, что вы почувствовали в последнем раунде.');
+  else if (g.done) setReactText(g.outcome === 'win' ? 'good' : 'bad', g.outcome === 'win' ? 'Победа' : 'Конец игры', 'Разбор раундов ниже.');
   else if (!phaseOpen()) setReactText('info', 'Сутки тишины', 'Прочитайте, что случилось, и нажмите «Готов».');
+  else if (journalRound()) setReactText('inner', `Раунд ${g.last.round} позади`, 'Запишите, что вы почувствовали.');
   else if (g.picks[ME]) setReactText('info', 'Ход выбран', App.mode === 'bot' ? 'Ждём, пока бот выберет свой.' : 'Ждём ход партнёра.');
   else setReactText('info', `Раунд ${g.round}`, 'Выберите ход вашего героя.');
 }
 function renderAll(){
   if (!App.game) return;
-  renderPanel(); renderPartner(); renderReactIdle(); renderIntro(); drawStatus();
+  renderPanel(); renderPartner(); renderReactIdle(); renderIntro(); renderFlow(); drawStatus();
 }
 
 /* ---------- end + summary ---------- */
@@ -846,38 +887,8 @@ function showEnd(){
     ? '<p>Огню дали понять, что его не забыли и не вычеркнули из жизни.</p><p>Лёд получил возможность побыть наедине с собой без упрёков.</p><p>Оба добились гармонии в отношениях.</p>'
     : `<p>За ${MAX_ROUNDS} раундов драконы так и не успокоились.</p><p>Посмотрите разбор ниже: там видно, что чувствовал каждый.</p>`;
   $('finale').hidden = false;
-  buildSummary();
 }
 function esc(t){ return String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-function buildSummary(){
-  const g = App.game, other = OTHER[ME];
-  const heard = [], inner = [];
-  let worst = null, best = null;
-  g.history.forEach(h => h.events.forEach(ev => {
-    const a = BY_ID[ev.id];
-    if (ev.side === ME){
-      if (a.feel) heard.push({r:h.round, said:a.label(), felt:a.feel()});
-      if (ev.other > 0 && (!worst || ev.other > worst.v)) worst = {v:ev.other, t:a.label()};
-      if (ev.other < 0 && (!best || ev.other < best.v)) best = {v:ev.other, t:a.label()};
-    } else if (a.self) inner.push({r:h.round, said:a.label(), felt:a.self()});
-  }));
-  const group = list => { const m = new Map(); list.forEach(p => { const k = p.said + '|' + p.felt; if (!m.has(k)) m.set(k, {said:p.said, felt:p.felt, rs:[]}); m.get(k).rs.push(p.r); }); return [...m.values()]; };
-  const rlabel = rs => rs.length === 1 ? `Раунд ${rs[0]}` : `Раунды ${rs.join(', ')}`;
-  const pairs = (list, empty) => list.length ? group(list).map(p => `<div class="pair"><span class="r">${rlabel(p.rs)}${p.rs.length > 1 ? ` · ${p.rs.length} раза` : ''}</span><span class="said">${esc(p.said)}</span><span class="felt">${esc(p.felt)}</span></div>`).join('') : `<p class="muted">${empty}</p>`;
-  $('summary').innerHTML = `
-    <h2>Разбор</h2>
-    <div class="highlights">
-      ${worst ? `<p><span class="tag bad">Сильнее всего кормило дракона ${GEN[other]}</span> ${esc(worst.t)}</p>` : ''}
-      ${best ? `<p><span class="tag good">Больше всего помогло</span> ${esc(best.t)}</p>` : ''}
-    </div>
-    <div class="sumgrid">
-      <section class="sumcol"><h3>Как ${NAME[other]} слышал${G[other]==='f'?'а':''} ваши слова</h3>${pairs(heard, 'Вы больше работали со своим драконом, чем говорили.')}</section>
-      <section class="sumcol"><h3>Что ${NAME[other]} думал${G[other]==='f'?'а':''} про себя</h3>${pairs(inner, 'Партнёр почти ничего не говорил.')}</section>
-    </div>
-    <div><button class="btn" id="again2" type="button">Сыграть ещё раз</button></div>`;
-  $('summary').hidden = false;
-  $('again2').addEventListener('click', rematch);
-}
 $('again').addEventListener('click', rematch);
 
 /* ---------- hero status & bubbles ---------- */
@@ -931,6 +942,208 @@ function resize(){
   SC = Math.min(CW/800, CH/340); OX = (CW - 800*SC)/2; OY = (CH - 340*SC)/2;
 }
 new ResizeObserver(resize).observe(cv);
+
+/* ---------- feelings journal ---------- */
+const FEELS = () => ['холодно','обидно','страшно','тревожно','злюсь','одиноко','стыдно', w(ME,'устал','устала'),'облегчение','тепло','спокойно'];
+const JR = {round:0, tags:{heard:[], sent:[]}};
+function journalOf(side){
+  if (App.mode === 'bot') return side === ME ? (App.journal || {}) : {};
+  return (App.room && App.room.journal && App.room.journal[side]) || {};
+}
+function revealedOf(side){
+  if (App.mode === 'bot') return true;
+  return !!(App.room && App.room.revealed && App.room.revealed[side]);
+}
+function journalRound(){
+  const g = App.game;
+  if (!g || !g.last || App.animating) return 0;
+  if (App.mode === 'bot' ? !App.introDone : !(App.room && (App.room.phase === 'play'))) return 0;
+  return journalOf(ME)['r'+g.last.round] ? 0 : g.last.round;
+}
+function roundEvents(round){
+  const g = App.game, h = g.history.find(x => x.round === round) || g.last;
+  const mine = h.events.find(e => e.side === ME), theirs = h.events.find(e => e.side !== ME);
+  return {mine, theirs};
+}
+function chipRow(kind){
+  return `<div class="chips" role="group" aria-label="Чувства">${FEELS().map(t => `<button type="button" class="chip" data-kind="${kind}" data-tag="${esc(t)}" aria-pressed="${JR.tags[kind].includes(t)}">${esc(t)}</button>`).join('')}</div>`;
+}
+function renderJournal(round){
+  const el = $('journal');
+  if (JR.round === round && !el.hidden) return;
+  JR.round = round; JR.tags = {heard:[], sent:[]};
+  const {mine, theirs} = roundEvents(round), other = OTHER[ME];
+  const ta = theirs && BY_ID[theirs.id], ma = mine && BY_ID[mine.id];
+  const qHeard = ta && ta.feel ? `
+    <div class="jq" data-q="heard">
+      <p class="jwho"><span class="tile ${other==='fire'?'t-or':'t-bl'}">${other==='fire'?IC.flame:IC.snow}</span>${NAME[other]}: <b>${esc(ta.label())}</b></p>
+      <p class="jask">Что ты ${w(ME,'почувствовал','почувствовала')}, когда это услышал${G[ME]==='f'?'а':''}?</p>
+      ${chipRow('heard')}
+      <input class="jtext" id="jt-heard" maxlength="200" placeholder="Своими словами…" autocomplete="off" aria-label="Своими словами">
+      <p class="jex">Например: ${esc(ta.feel())}</p>
+    </div>` : '';
+  const qSent = ma ? `
+    <div class="jq" data-q="sent">
+      <p class="jwho"><span class="tile ${ME==='fire'?'t-or':'t-bl'}">${ME==='fire'?IC.flame:IC.snow}</span>Ты: <b>${esc(ma.label())}</b></p>
+      <p class="jask">Что ты ${w(ME,'чувствовал','чувствовала')}, когда это ${w(ME,'делал','делала')}?</p>
+      ${chipRow('sent')}
+      <input class="jtext" id="jt-sent" maxlength="200" placeholder="Своими словами…" autocomplete="off" aria-label="Своими словами">
+      ${ma.self ? `<p class="jex">Например: ${esc(ma.self())}</p>` : ''}
+    </div>` : '';
+  el.innerHTML = `
+    <div class="jhead"><h3>Раунд ${round}: что ты ${w(ME,'почувствовал','почувствовала')}?</h3><span class="trait">видно только тебе</span></div>
+    <p class="jhint">Отметь чувства и, если хочешь, допиши строку. Начни с «я ${w(ME,'почувствовал','почувствовала')}…». ${App.mode==='bot' ? 'Записи останутся в твоём разборе.' : 'Партнёр увидит записи только в разборе и только те, что ты решишь показать.'}</p>
+    ${qHeard}${qSent}
+    <div class="jbtns"><button class="cta jsave" id="jSave" type="button">Сохранить</button><button class="btn" id="jSkip" type="button">Пропустить</button></div>`;
+  el.hidden = false;
+}
+$('journal').addEventListener('click', e => {
+  const c = e.target.closest('.chip');
+  if (c){
+    const list = JR.tags[c.dataset.kind], t = c.dataset.tag, i = list.indexOf(t);
+    if (i >= 0) list.splice(i, 1); else list.push(t);
+    c.setAttribute('aria-pressed', String(i < 0)); return;
+  }
+  if (e.target.closest('#jSave')) saveJournal(false);
+  else if (e.target.closest('#jSkip')) saveJournal(true);
+});
+$('journal').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.classList.contains('jtext')) saveJournal(false); });
+function saveJournal(skip){
+  const round = JR.round; if (!round) return;
+  const part = k => {
+    const inp = $('jt-'+k); if (!inp) return null;
+    const text = inp.value.trim(), tags = JR.tags[k].slice();
+    return (text || tags.length) ? {tags, text} : null;
+  };
+  const heard = skip ? null : part('heard'), sent = skip ? null : part('sent');
+  const entry = {skipped: !(heard || sent)};
+  if (heard) entry.heard = heard;
+  if (sent) entry.sent = sent;
+  $('journal').hidden = true; JR.round = 0;
+  if (App.mode === 'bot'){ App.journal['r'+round] = entry; renderAll(); return; }
+  App.room.journal = App.room.journal || {}; App.room.journal[ME] = App.room.journal[ME] || {}; App.room.journal[ME]['r'+round] = entry;
+  renderAll();
+  App.ref.child(`journal/${ME}/r${round}`).set(entry).catch(err => setReactText('info', 'Ошибка сети', err.message));
+}
+
+/* ---------- consent before reveal ---------- */
+function myNotes(){
+  const j = journalOf(ME), out = [];
+  Object.keys(j).sort((a,b) => +a.slice(1) - +b.slice(1)).forEach(k => {
+    const e = j[k], r = +k.slice(1); if (!e || e.skipped) return;
+    for (const part of ['heard','sent']) if (e[part]) out.push({r, part, key:`${k}.${part}`, data:e[part]});
+  });
+  return out;
+}
+const noteText = d => [arr(d.tags).join(', '), d.text ? `«${d.text}»` : ''].filter(Boolean).join(' · ');
+function renderConsent(){
+  const el = $('consent');
+  if (!el.hidden) return;
+  const notes = myNotes(), other = OTHER[ME];
+  if (!notes.length){ submitConsent([]); return; }
+  el.innerHTML = `
+    <div class="jhead"><h3>Что показать ${other==='fire'?'Огню':'Льду'}?</h3><span class="trait">${notes.length} ${notes.length===1?'запись':notes.length<5?'записи':'записей'}</span></div>
+    <p class="jhint">Снимите галочку с того, что хотите оставить при себе. Остальное партнёр увидит в разборе рядом со своими словами.</p>
+    <div class="clist">${notes.map((n,i) => `
+      <label class="citem"><input type="checkbox" id="cn-${i}" data-key="${n.key}" checked>
+        <span><span class="r">Раунд ${n.r} · ${n.part==='heard' ? 'когда я ' + w(ME,'услышал','услышала') : 'когда я ' + w(ME,'отвечал','отвечала')}</span><span class="felt">${esc(noteText(n.data))}</span></span></label>`).join('')}</div>
+    <div class="jbtns"><button class="cta" id="cGo" type="button">Открыть разбор</button></div>`;
+  el.hidden = false;
+  $('cGo').addEventListener('click', () => submitConsent([...el.querySelectorAll('input[type=checkbox]')].filter(c => !c.checked).map(c => c.dataset.key)));
+}
+function submitConsent(hiddenKeys){
+  $('consent').hidden = true;
+  const upd = {};
+  hiddenKeys.forEach(k => { const [r, part] = k.split('.'); upd[`journal/${ME}/${r}/${part}/hidden`] = true; });
+  upd['revealed/'+ME] = true;
+  App.room.revealed = App.room.revealed || {}; App.room.revealed[ME] = true;
+  hiddenKeys.forEach(k => { const [r, part] = k.split('.'); const e = journalOf(ME)[r]; if (e && e[part]) e[part].hidden = true; });
+  renderAll();
+  App.ref.update(upd).catch(err => setReactText('info', 'Ошибка сети', err.message));
+}
+
+/* ---------- summary ---------- */
+let SUM_SIG = '';
+function buildSummary(){
+  const g = App.game, other = OTHER[ME], partnerReady = revealedOf(other);
+  const sig = [App.mode, g.history.length, partnerReady, JSON.stringify(journalOf(other)), JSON.stringify(journalOf(ME))].join('|');
+  if (sig === SUM_SIG && !$('summary').hidden) return;
+  SUM_SIG = sig;
+  const jo = journalOf(other), jm = journalOf(ME);
+  const theirNote = (r, part) => { const e = jo['r'+r]; return e && e[part] && !e[part].hidden ? e[part] : null; };
+  let worst = null, best = null;
+  const heard = [], sent = [], diary = [];
+  g.history.forEach(h => h.events.forEach(ev => {
+    const a = BY_ID[ev.id];
+    if (ev.side === ME){
+      if (ev.other > 0 && (!worst || ev.other > worst.v)) worst = {v:ev.other, t:a.label()};
+      if (ev.other < 0 && (!best || ev.other < best.v)) best = {v:ev.other, t:a.label()};
+      if (a.feel) heard.push({r:h.round, said:a.label(), note: App.mode === 'room' ? theirNote(h.round, 'heard') : null, fallback:a.feel()});
+      const me = jm['r'+h.round];
+      if (me && me.sent) diary.push({r:h.round, said:'Ты: ' + a.label(), note:me.sent});
+    } else {
+      if (App.mode === 'room') sent.push({r:h.round, said:a.label(), note:theirNote(h.round, 'sent'), fallback:a.self ? a.self() : ''});
+      const me = jm['r'+h.round];
+      if (me && me.heard) diary.push({r:h.round, said:`${NAME[other]}: ` + a.label(), note:me.heard});
+    }
+  }));
+  const rlabel = rs => rs.length === 1 ? `Раунд ${rs[0]}` : `Раунды ${rs.join(', ')} · ${rs.length} раза`;
+  const tagsHtml = d => arr(d.tags).length ? `<span class="ptags">${arr(d.tags).map(t => `<span class="ptag">${esc(t)}</span>`).join('')}</span>` : '';
+  const items = (list, who, empty) => {
+    if (!list.length) return `<p class="muted">${empty}</p>`;
+    const out = [], m = new Map();
+    list.forEach(p => {
+      if (p.note){ out.push({...p, rs:[p.r]}); return; }
+      const k = p.said + '|' + p.fallback;
+      if (!m.has(k)){ const o = {...p, rs:[]}; m.set(k, o); out.push(o); }
+      m.get(k).rs.push(p.r);
+    });
+    return out.map(p => p.note
+      ? `<div class="pair own"><span class="r">${rlabel(p.rs)}</span><span class="said">${esc(p.said)}</span>${tagsHtml(p.note)}${p.note.text ? `<span class="felt">«${esc(p.note.text)}»</span>` : ''}<span class="by">${who}</span></div>`
+      : `<div class="pair"><span class="r">${rlabel(p.rs)}</span><span class="said">${esc(p.said)}</span>${p.fallback ? `<span class="felt dim">${esc(p.fallback)}</span><span class="by">${App.mode==='bot' ? 'бот' : 'заготовка: партнёр не записал или скрыл'}</span>` : ''}</div>`).join('');
+  };
+  const himHer = G[other]==='f' ? 'а' : '';
+  let cols;
+  if (App.mode === 'bot'){
+    cols = `<section class="sumcol"><h3>Как бот слышал ваши слова</h3>${items(heard, 'бот', 'Вы больше работали со своим драконом, чем говорили.')}</section>
+      <section class="sumcol"><h3>Ваш дневник</h3>${diary.length ? diary.map(d => `<div class="pair own"><span class="r">Раунд ${d.r}</span><span class="said">${esc(d.said)}</span>${tagsHtml(d.note)}${d.note.text ? `<span class="felt">«${esc(d.note.text)}»</span>` : ''}</div>`).join('') : '<p class="muted">Вы ничего не записали.</p>'}</section>`;
+  } else if (!partnerReady){
+    cols = `<p class="wait"><span class="dotp"></span>Ждём, пока ${NAME[other]} решит, какие записи показать.</p>`;
+  } else {
+    cols = `<section class="sumcol"><h3>Как ${NAME[other]} слышал${himHer} ваши слова</h3>${items(heard, `записал${himHer} ${NAME[other]}`, 'Вы больше работали со своим драконом, чем говорили.')}</section>
+      <section class="sumcol"><h3>Что ${NAME[other]} чувствовал${himHer}, когда отвечал${himHer}</h3>${items(sent, `записал${himHer} ${NAME[other]}`, 'Партнёр почти ничего не говорил.')}</section>`;
+  }
+  $('summary').innerHTML = `
+    <h2>Разбор</h2>
+    <div class="highlights">
+      ${worst ? `<p><span class="tag bad">Сильнее всего кормило дракона ${GEN[other]}</span> ${esc(worst.t)}</p>` : ''}
+      ${best ? `<p><span class="tag good">Больше всего помогло</span> ${esc(best.t)}</p>` : ''}
+    </div>
+    <div class="sumgrid">${cols}</div>
+    <div class="jbtns"><button class="btn" id="again2" type="button">Сыграть ещё раз</button>${App.mode==='room' ? '<button class="btn danger" id="delRoom" type="button">Удалить комнату и записи</button>' : ''}</div>
+    ${App.mode==='room' ? '<p class="muted small">Через сутки комната закрывается сама, и записи становятся недоступны.</p>' : ''}`;
+  $('summary').hidden = false;
+  $('again2').addEventListener('click', rematch);
+  if ($('delRoom')) $('delRoom').addEventListener('click', deleteRoom);
+}
+function deleteRoom(){
+  const b = $('delRoom');
+  if (b.dataset.armed !== '1'){ b.dataset.armed = '1'; b.textContent = 'Точно удалить? Нажмите ещё раз'; return; }
+  App.deleted = true;
+  App.ref.remove().catch(err => setReactText('info', 'Не удалось удалить', err.message));
+}
+
+/* ---------- end-of-game flow ---------- */
+function renderFlow(){
+  const g = App.game;
+  const jr = journalRound();
+  const inGame = App.mode === 'bot' ? App.introDone : (App.room && App.room.phase === 'play');
+  if (jr){ renderJournal(jr); } else { $('journal').hidden = true; JR.round = 0; }
+  const ended = g.done && !App.animating && !jr && inGame;
+  if (ended && App.mode === 'room' && !revealedOf(ME)) renderConsent(); else $('consent').hidden = true;
+  if (ended && (App.mode === 'bot' || revealedOf(ME))) buildSummary(); else { $('summary').hidden = true; SUM_SIG = ''; }
+  $('panel').hidden = !!jr || g.done;
+}
 
 const hexRGB = h => { const n = parseInt(h.slice(1),16); return [(n>>16)&255,(n>>8)&255,n&255]; };
 function mix(a, b, t){ t = Math.max(0, Math.min(1, t)); const A = hexRGB(a), B = hexRGB(b); return `rgb(${A.map((v,i)=>Math.round(v + (B[i]-v)*t)).join(',')})`; }
