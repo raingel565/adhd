@@ -258,6 +258,28 @@ h1{margin:0; font-size:clamp(24px,3.4vw,32px); font-weight:800; letter-spacing:-
 .btn.danger{color:#ff9a9a; border-color:rgba(255,97,97,.35)}
 .btn.danger:hover{border-color:rgba(255,97,97,.6)}
 .jex{margin:-2px 0 0; font-size:12.5px; color:var(--muted); font-style:italic}
+.qbadge{display:flex; align-items:center; gap:12px; width:100%; text-align:left; font:500 14.5px var(--f); color:var(--muted); background:rgba(124,108,255,.10); border:1px solid rgba(170,150,255,.35); border-radius:16px; padding:10px 14px; cursor:pointer; transition:background .15s}
+.qbadge:hover{background:rgba(124,108,255,.18)}
+.qbadge b{color:var(--text); font-weight:700}
+.qbadge #qBadge{flex:1; min-width:0}
+.qbadge .chev{color:var(--muted); font-size:18px}
+.qbadge:focus-visible,.qopt:focus-visible{outline:2px solid #a48bff; outline-offset:2px}
+.quiz{border-radius:26px; padding:22px; display:grid; gap:16px; max-width:640px; width:100%; justify-self:center; animation:pop .35s ease-out}
+.qtop{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
+.qdots{display:flex; gap:6px}
+.qdots span{width:22px; height:5px; border-radius:99px; background:rgba(255,255,255,.12)}
+.qdots span.on{background:linear-gradient(90deg,#a48bff,#ff7ce0)}
+.qdots span.cur{background:rgba(170,150,255,.55)}
+.qq{margin:0; font-size:clamp(20px,3.2vw,26px); font-weight:800; line-height:1.25; text-wrap:balance}
+.qopts{display:grid; gap:10px}
+.qopt{font:600 16px/1.4 var(--f); color:var(--text); text-align:left; background:rgba(255,255,255,.05); border:1px solid var(--line-2); border-radius:18px; padding:16px 18px; cursor:pointer; transition:background .15s, border-color .15s, transform .15s}
+.qopt:hover{background:rgba(124,108,255,.16); border-color:rgba(170,150,255,.6); transform:translateY(-1px)}
+.qscale{display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:10px; align-items:center}
+.qend{font-size:13px; font-weight:700; white-space:nowrap}
+.qend.f{color:#ffa07a} .qend.i{color:#7fdcff}
+.qbar{position:relative; height:10px; border-radius:99px; background:linear-gradient(90deg,#ff7a45,#ff4f9a 35%,#7c6cff 65%,#38c6f4)}
+.qmark{position:absolute; top:50%; width:20px; height:20px; border-radius:50%; background:#fff; border:3px solid #0c0d11; box-shadow:0 0 14px rgba(255,255,255,.6); transform:translate(-50%,-50%)}
+.qdesc{margin:0; color:#cfd4de}
 
 </style>
 </head>
@@ -274,6 +296,7 @@ h1{margin:0; font-size:clamp(24px,3.4vw,32px); font-weight:800; letter-spacing:-
   <section class="home glass" id="home" aria-labelledby="homeTitle">
     <h2 id="homeTitle">Кем вы играете?</h2>
     <p class="lead">Нажмите на героя, за которого играете, и выберите пол обоих.</p>
+    <button class="qbadge" id="qStart" type="button"><span class="tile t-pu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9a3 3 0 1 1 4 2.8c-.7.4-1 1-1 1.7V14"/><circle cx="12" cy="18" r=".6"/></svg></span><span id="qBadge"></span><span class="chev">›</span></button>
     <div class="roles">
       <div class="pick fire" id="pick-fire">
         <button class="rolebtn" type="button" id="role-fire" data-role="fire"><svg viewBox="0 0 200 230" id="prevFire" aria-hidden="true"></svg><span class="nm">Огонь<span class="me">это я</span></span></button>
@@ -310,9 +333,12 @@ h1{margin:0; font-size:clamp(24px,3.4vw,32px); font-weight:800; letter-spacing:-
       </div>
     </div>
     <button class="cta" id="jGo" type="button">Войти в игру</button>
+    <button class="btn" id="jQuiz" type="button">Пройти опрос: кто я, огонь или лёд?</button>
     <button class="btn" id="jBack" type="button">Назад</button>
     <p class="err" id="jErr" hidden></p>
   </section>
+
+  <section class="quiz glass" id="quiz" hidden aria-label="Опрос"></section>
 
   <section class="lobby glass" id="lobby" hidden aria-labelledby="lTitle">
     <h2 id="lTitle">Комната создана</h2>
@@ -592,7 +618,7 @@ const TS = () => firebase.database.ServerValue.TIMESTAMP;
 /* ---------- screens ---------- */
 function showScreen(name){
   App.screen = name;
-  for (const s of ['home','join','lobby','game']) $(s).hidden = s !== name;
+  for (const s of ['home','join','lobby','game','quiz']) $(s).hidden = s !== name;
   $('tools').hidden = !(name === 'game' || name === 'lobby');
   $('restart').hidden = name !== 'game';
   if (name === 'game') requestAnimationFrame(resize);
@@ -601,6 +627,7 @@ function homeErr(msg){ const e = $('homeErr'); e.textContent = msg || ''; e.hidd
 
 /* ---------- home ---------- */
 function renderHome(){
+  renderQuizBadge();
   $('prevFire').innerHTML = heroSVG('fire', G.fire, 'calm');
   $('prevIce').innerHTML = heroSVG('ice', G.ice, 'calm');
   for (const side of SIDES){
@@ -636,7 +663,7 @@ async function createRoom(){
   try {
     let code, ref;
     for (let i=0;i<5;i++){ code = genCode(); ref = db().ref('rooms/'+code); const s = await ref.get(); if (!s.exists()) break; }
-    await ref.set({created:TS(), phase:'lobby', genders:{fire:G.fire, ice:G.ice}, players:{[ME]:{id:PID, online:true}}, ready:{fire:false, ice:false}, game:newGame()});
+    await ref.set({created:TS(), phase:'lobby', genders:{fire:G.fire, ice:G.ice}, players:{[ME]:Object.assign({id:PID, online:true}, QRES ? {quiz:QRES.fire} : {})}, ready:{fire:false, ice:false}, game:newGame()});
     location.hash = code;
   } catch(e){ homeErr('Не получилось создать комнату: ' + e.message); }
 }
@@ -692,7 +719,7 @@ $('jGo').addEventListener('click', () => {
     if (!r) return r;
     r.players = r.players || {};
     if (r.players[side]) return;
-    r.players[side] = {id:PID, online:true};
+    r.players[side] = Object.assign({id:PID, online:true}, QRES ? {quiz:QRES.fire} : {});
     r.genders = r.genders || {}; r.genders[side] = JG;
     if (r.players.fire && r.players.ice && r.phase === 'lobby') r.phase = 'intro';
     return r;
@@ -797,7 +824,7 @@ function renderIntro(){
   if (!show) return;
   $('introIce').textContent = `Дел очень много, времени нет ни на что. ${w('ice','Он умеет','Она умеет')} сосредоточиться на одной задаче и решить её, поэтому просто ${w('ice','пропал','пропала')} из связи на сутки.`;
   $('introFire').textContent = `Дела есть и у ${w('fire','него','неё')}, но абстрагироваться ${w('fire','он','она')} не умеет: работа, тревога и тишина в телефоне наваливаются разом.`;
-  $('introNow').textContent = `Через сутки Лёд пишет «привет», как будто ничего не было. Вы играете за ${NAME[ME] === 'Огонь' ? 'Огонь' : 'Лёд'}${App.mode === 'bot' ? ', за второго героя играет бот' : ''}.`;
+  $('introNow').textContent = `Через сутки Лёд пишет «привет», как будто ничего не было. Вы играете за ${NAME[ME] === 'Огонь' ? 'Огонь' : 'Лёд'}${App.mode === 'bot' ? ', за второго героя играет бот' : ''}. ${quizLine()}`;
   const iAmReady = App.mode === 'room' && App.room.ready && App.room.ready[ME];
   $('go').hidden = !!iAmReady; $('introWait').hidden = !iAmReady;
 }
@@ -942,6 +969,96 @@ function resize(){
   SC = Math.min(CW/800, CH/340); OX = (CW - 800*SC)/2; OY = (CH - 340*SC)/2;
 }
 new ResizeObserver(resize).observe(cv);
+
+/* ---------- perception quiz ---------- */
+const QUIZ = [
+  {q:'У тебя серьёзная проблема на работе. Что сделаешь?', f:'Позвоню близкому: мне важно поделиться', i:'Погружусь в задачу, решу и потом расскажу'},
+  {q:'Близкий человек не отвечает уже несколько часов.', f:'Напишу ещё раз: вдруг что-то случилось', i:'Наверное, занят. Ответит, когда сможет'},
+  {q:'После тяжёлого дня тебе лучше всего…', f:'Рассказать кому-то, как прошёл день', i:'Побыть в тишине и никого не видеть'},
+  {q:'Вы поссорились.', f:'Хочу обсудить сразу, пока не остыло', i:'Мне нужно время, чтобы остыть'},
+  {q:'Навалилось сразу много дел.', f:'Чувствую всё разом, трудно отключить тревогу', i:'Беру одно дело и делаю, остальное подождёт'},
+  {q:'Партнёр пишет: «Нам надо поговорить».', f:'Тревожно, хочу узнать прямо сейчас', i:'Хочется отложить, внутри всё сжимается'},
+  {q:'Тебе плохо, а близкий каждые полчаса спрашивает, как ты.', f:'Приятно: значит, обо мне думают', i:'Тяжело: хочется, чтобы дали время'}
+];
+const Q = {i:0, ans:[], flip:[], back:'home'};
+let QRES = null;
+try { const v = JSON.parse(localStorage.getItem('drakony-quiz') || 'null'); if (v && typeof v.fire === 'number') QRES = v; } catch(e){}
+const quizType = pct => pct >= 60 ? 'fire' : pct <= 40 ? 'ice' : 'mid';
+const quizLabel = pct => pct >= 50 ? `на ${pct}% Огонь` : `на ${100 - pct}% Лёд`;
+function startQuiz(back){
+  Q.i = 0; Q.ans = []; Q.back = back || 'home';
+  Q.flip = QUIZ.map(() => Math.random() < 0.5);
+  showScreen('quiz'); renderQuiz();
+}
+function renderQuiz(){
+  const el = $('quiz');
+  if (Q.i < QUIZ.length){
+    const item = QUIZ[Q.i], opts = Q.flip[Q.i] ? [['i', item.i], ['f', item.f]] : [['f', item.f], ['i', item.i]];
+    el.innerHTML = `
+      <div class="qtop"><span class="pill">Вопрос ${Q.i + 1} из ${QUIZ.length}</span>
+        <div class="qdots" aria-hidden="true">${QUIZ.map((_, k) => `<span class="${k < Q.i ? 'on' : k === Q.i ? 'cur' : ''}"></span>`).join('')}</div></div>
+      <h2 class="qq">${item.q}</h2>
+      <div class="qopts">${opts.map(([v, t]) => `<button class="qopt" type="button" id="qo-${v}" data-v="${v}">${t}</button>`).join('')}</div>
+      <div class="jbtns">${Q.i > 0 ? '<button class="btn" id="qBack" type="button">Назад</button>' : ''}<button class="btn" id="qCancel" type="button">Выйти из опроса</button></div>
+      <p class="muted small">Отвечайте так, как обычно делаете, а не как «правильно». Правильных ответов здесь нет.</p>`;
+    const first = el.querySelector('.qopt'); first && first.focus({preventScroll:true});
+    return;
+  }
+  const pct = Math.round(Q.ans.filter(a => a === 'f').length / QUIZ.length * 100);
+  QRES = {fire:pct}; try { localStorage.setItem('drakony-quiz', JSON.stringify(QRES)); } catch(e){}
+  const type = quizType(pct);
+  const desc = {
+    fire:'Ты тянешься к людям. В трудный момент хочешь поделиться и обсудить, а когда близкий пропадает, тревога нарастает быстро. Ты чувствуешь всё сразу.',
+    ice:'Ты восстанавливаешься в тишине. В трудный момент уходишь в себя и решаешь задачу, а давление и расспросы заставляют закрыться сильнее. Ты умеешь сосредоточиться на одном.',
+    mid:'В тебе есть и огонь, и лёд. В одних ситуациях ты тянешься к людям, в других уходишь в себя. Можно сыграть за любую сторону.'
+  }[type];
+  const sug = type === 'ice' ? 'ice' : 'fire', alt = OTHER[sug];
+  const forced = Q.back === 'join' ? App.joinSide : null;
+  el.innerHTML = `
+    <div class="qtop"><span class="pill">Результат</span></div>
+    <h2 class="qq">Ты ${quizLabel(pct)}</h2>
+    <div class="qscale" role="img" aria-label="Шкала: ${pct}% Огонь, ${100 - pct}% Лёд">
+      <span class="qend f">Огонь ${pct}%</span><div class="qbar"><div class="qmark" style="left:${100 - pct}%"></div></div><span class="qend i">Лёд ${100 - pct}%</span>
+    </div>
+    <p class="qdesc">${desc}</p>
+    ${forced
+      ? `<p class="qdesc">${(type === 'mid' || forced === sug) ? `В этой комнате ты играешь за ${NAME[forced]}, и это совпадает с твоим результатом.` : `В этой комнате тебе достался ${NAME[forced]}, противоположная сторона. Это даже полезно: изнутри видно, что чувствует другой.`}</p>
+         <div class="jbtns"><button class="cta" id="qDone" type="button">Вернуться к приглашению</button></div>`
+      : `<div class="jbtns"><button class="cta" id="qPlay" type="button" data-side="${sug}">Играть за ${NAME[sug]}</button><button class="btn" id="qAlt" type="button" data-side="${alt}">Попробовать за ${NAME[alt]}</button></div>
+         <p class="muted small">Игра за противоположную сторону помогает понять, что чувствует партнёр.</p>`}
+    <p class="muted small">Это иллюстрация, а не тест или диагноз. Люди редко бывают «чистым» типом.</p>`;
+}
+$('quiz').addEventListener('click', e => {
+  const o = e.target.closest('.qopt');
+  if (o){ Q.ans[Q.i] = o.dataset.v; Q.i++; renderQuiz(); return; }
+  if (e.target.closest('#qBack')){ Q.i = Math.max(0, Q.i - 1); Q.ans.length = Q.i; renderQuiz(); return; }
+  if (e.target.closest('#qCancel') || e.target.closest('#qDone')){ quizExit(); return; }
+  const p = e.target.closest('#qPlay, #qAlt');
+  if (p){ ME = p.dataset.side; savePrefs(); quizExit(); }
+});
+function quizExit(){
+  if (Q.back === 'join' && App.mode === 'room' && App.joinSide){ showJoin(); return; }
+  showScreen('home'); renderHome();
+  window.scrollTo({top:0});
+}
+function renderQuizBadge(){
+  const el = $('qBadge');
+  if (!QRES){ el.innerHTML = 'Не знаете, кто вы? <b>Пройдите опрос из 7 вопросов</b>'; return; }
+  el.innerHTML = `По опросу вы ${quizLabel(QRES.fire)}. <b>Пройти заново</b>`;
+}
+$('qStart').addEventListener('click', () => startQuiz('home'));
+$('jQuiz').addEventListener('click', () => startQuiz('join'));
+function quizLine(){
+  const pl = (App.mode === 'room' && App.room && App.room.players) || {};
+  const pctOf = s => App.mode === 'bot' ? (s === ME && QRES ? QRES.fire : null) : (pl[s] && typeof pl[s].quiz === 'number' ? pl[s].quiz : null);
+  const mine = pctOf(ME), theirs = pctOf(OTHER[ME]), parts = [];
+  if (mine !== null) parts.push(`вы ${quizLabel(mine)}`);
+  if (theirs !== null) parts.push(`партнёр ${quizLabel(theirs)}`);
+  if (!parts.length) return '';
+  let t = `По опросу ${parts.join(', ')}.`;
+  if (mine !== null && quizType(mine) !== 'mid' && quizType(mine) !== ME) t += ' Сегодня вы смотрите на ситуацию с другой стороны.';
+  return t;
+}
 
 /* ---------- feelings journal ---------- */
 const FEELS = () => ['холодно','обидно','страшно','тревожно','злюсь','одиноко','стыдно', w(ME,'устал','устала'),'облегчение','тепло','спокойно'];
