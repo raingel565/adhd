@@ -411,6 +411,31 @@ h1{margin:0; font-size:clamp(24px,3.4vw,32px); font-weight:800; letter-spacing:-
 .scnpick button[aria-pressed="true"]{background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.28); color:var(--text); box-shadow:inset 0 1px 0 rgba(255,255,255,.1)}
 .scnpick button:focus-visible{outline:2px solid var(--ice); outline-offset:2px}
 @media (max-width:420px){ .scnpick{grid-template-columns:1fr} }
+/* whose turn: banner + spotlight */
+.turn{position:absolute; left:50%; top:12px; z-index:3; transform:translate(-50%,-8px); opacity:0; pointer-events:none;
+  display:flex; align-items:center; gap:7px; white-space:nowrap;
+  font:700 13px var(--f); color:#fff; padding:8px 14px; border-radius:999px; background:rgba(18,20,26,.72); border:1px solid var(--line-2);
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); box-shadow:0 8px 24px rgba(0,0,0,.3); transition:opacity .3s, transform .3s}
+.turn.on{opacity:1; transform:translate(-50%,0)}
+.turn .tdot{flex:none; width:8px; height:8px; border-radius:50%; background:var(--muted)}
+.turn.fire{border-color:rgba(255,150,100,.6); background:rgba(70,30,22,.78)} .turn.fire .tdot{background:var(--fire); box-shadow:0 0 10px var(--fire)}
+.turn.ice{border-color:rgba(127,220,255,.6); background:rgba(18,40,62,.78)} .turn.ice .tdot{background:var(--ice); box-shadow:0 0 10px var(--ice)}
+.turn.live .tdot{animation:tpulse 1.1s ease-in-out infinite}
+.turn.bump{animation:tbump .45s cubic-bezier(.2,.8,.2,1)}
+@keyframes tpulse{50%{transform:scale(1.6); opacity:.6}}
+@keyframes tbump{0%{transform:translate(-50%,-10px) scale(.92)} 100%{transform:translate(-50%,0) scale(1)}}
+.spot{position:absolute; inset:0; z-index:1; pointer-events:none; opacity:0; transition:opacity .45s, background .45s}
+.spot.on{opacity:1}
+.spot.fire{background:linear-gradient(90deg, transparent 42%, rgba(8,10,16,.5) 58%)}
+.spot.ice{background:linear-gradient(90deg, rgba(8,10,16,.5) 42%, transparent 58%)}
+.tbadge{font:700 11.5px var(--f); letter-spacing:.02em; padding:4px 10px; border-radius:999px; color:var(--muted); border:1px solid var(--line-2); white-space:nowrap}
+.tbadge.on{color:#fff}
+.panel.fire .tbadge.on{background:linear-gradient(90deg,var(--fire),var(--pink)); border-color:transparent; box-shadow:0 0 14px rgba(255,90,120,.45)}
+.panel.ice .tbadge.on{background:linear-gradient(90deg,#2aa7e0,var(--violet)); border-color:transparent; box-shadow:0 0 14px rgba(120,140,255,.45)}
+.panel.myturn.fire{box-shadow:var(--shadow), 0 0 0 1px rgba(255,140,100,.45), 0 0 28px rgba(255,100,80,.18)}
+.panel.myturn.ice{box-shadow:var(--shadow), 0 0 0 1px rgba(127,220,255,.45), 0 0 28px rgba(80,170,255,.18)}
+@media (max-width:760px){ .turn{font-size:11.5px; line-height:1.2; padding:6px 10px; top:10px; white-space:normal; text-align:left; border-radius:14px; gap:6px} .ph .trait{display:none} }
+@media (prefers-reduced-motion: reduce){ .turn.live .tdot,.turn.bump{animation:none} }
 
 </style>
 </head>
@@ -523,6 +548,8 @@ h1{margin:0; font-size:clamp(24px,3.4vw,32px); font-weight:800; letter-spacing:-
         <canvas id="cv"></canvas>
         <div class="hud fire glass" id="hud-fire"><span class="tile t-or" id="tileFire"></span><div class="meta"><div class="line"><span class="num" id="num-fire"></span><span class="st" id="st-fire"></span></div><div class="trk"><div class="fl" id="fill-fire"></div></div></div></div>
         <div class="hud ice glass" id="hud-ice"><span class="tile t-bl" id="tileIce"></span><div class="meta"><div class="line"><span class="st" id="st-ice"></span><span class="num" id="num-ice"></span></div><div class="trk"><div class="fl" id="fill-ice"></div></div></div></div>
+        <div class="spot" id="spot" aria-hidden="true"></div>
+        <div class="turn" id="turn" aria-live="polite"></div>
         <div class="tagsGame" id="tagsGame" aria-hidden="true"></div>
         <div class="say off" id="say-fire"></div>
         <div class="say off" id="say-ice"></div>
@@ -1158,10 +1185,15 @@ function visualEvent(ev){
   const P = evPlan(ev), {a, side, other} = P;
   const col = s => s === 'fire' ? '#ff9b6b' : '#7fdcff';
   const num = v => (v > 0 ? '+' : '−') + Math.abs(v);
-  hideBubbles();
+  hideBubbles(); setSpot(side);
+  setTurn(side === ME ? 'Твой ход' : `Ход ${GEN[side]}`, side);
   bubble(side, P.sayText, a.think, P.sayDur);
   setReactText(ev.kind || a.kind, `${NAME[side]} · ${TAGS[a.kind]}`, (ev.relapse ? 'Срыв. ' : '') + a.why());
-  if (P.th) later(() => { hideBubbles(); bubble(P.th.side, P.th.text, true, P.th.dur); }, P.sayDur + 250);
+  if (P.th) later(() => {
+    hideBubbles(); setSpot(P.th.side);
+    setTurn(P.th.side === side ? 'Твои мысли' : 'Ты слышишь', P.th.side);
+    bubble(P.th.side, P.th.text, true, P.th.dur);
+  }, P.sayDur + 250);
   const feel = () => {};
   const bump = (s, v, c) => { if (!v) return; V[s] = clamp(V[s] + v); floatNum(s, num(v), c || (v > 0 ? col(s) : '#6ff0ae')); drawStatus(); };
   if (a.kind === 'bad' || a.kind === 'trap'){
@@ -1216,9 +1248,11 @@ function renderPanel(){
   if (App.tab === 'good' && !g.key[side]) App.tab = 'main';
   const tab = App.tab;
   const list = tab === 'main' ? g.order[side].map(id=>BY_ID[id]) : tab === 'good' ? ACTIONS[side+'Good'] : ACTIONS[side+'Inner'];
-  const el = $('panel'); el.className = 'panel glass ' + side;
+  const el = $('panel'), my = canPick();
+  el.className = 'panel glass ' + side + (my ? ' myturn' : '');
+  const badge = g.done ? '' : my ? '<span class="tbadge on">Твой ход</span>' : g.picks && g.picks[ME] && !App.animating ? '<span class="tbadge">Ход выбран</span>' : '';
   el.innerHTML = `
-    <div class="ph"><span class="tile ${side==='fire'?'t-or':'t-bl'}">${side==='fire'?IC.flame:IC.snow}</span><h3>${NAME[side]}</h3><span class="trait">${side==='fire'?'Черпает силы в близких':'Справляется сам'}</span></div>
+    <div class="ph"><span class="tile ${side==='fire'?'t-or':'t-bl'}">${side==='fire'?IC.flame:IC.snow}</span><h3>${NAME[side]}</h3>${badge}<span class="trait">${side==='fire'?'Черпает силы в близких':'Справляется сам'}</span></div>
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" type="button" id="tab-main" data-tab="main" aria-selected="${tab==='main'}">Действия</button>
       ${g.key[side] ? `<button class="tab" role="tab" type="button" id="tab-good" data-tab="good" aria-selected="${tab==='good'}">Новые</button>` : ''}
@@ -1266,7 +1300,7 @@ function renderReactIdle(){
 }
 function renderAll(){
   if (!App.game) return;
-  renderPanel(); renderPartner(); renderReactIdle(); renderIntro(); renderFlow(); drawStatus();
+  renderPanel(); renderPartner(); renderReactIdle(); renderTurnIdle(); renderIntro(); renderFlow(); drawStatus();
 }
 
 /* ---------- end + summary ---------- */
@@ -1314,6 +1348,26 @@ function drawStatus(){
 }
 const HEAD = {fire:{x:250, y:82}, ice:{x:550, y:82}};
 const sayTimer = {}, busyUntil = {fire:0, ice:0};
+function setTurn(text, side, live){
+  const el = $('turn'); if (!el) return;
+  if (!text){ el.classList.remove('on'); return; }
+  const key = text + '|' + side + '|' + !!live; if (el.dataset.k === key && el.classList.contains('on')) return;
+  el.dataset.k = key;
+  el.className = 'turn on' + (side ? ' ' + side : '') + (live ? ' live' : '');
+  el.innerHTML = `<span class="tdot"></span><span>${esc(text)}</span>`;
+  const hw = Math.max($('hud-fire').offsetWidth, $('hud-ice').offsetWidth), hl = $('hud-fire').offsetLeft;
+  el.style.maxWidth = Math.max(90, CW - 2*(hw + hl) - 12) + 'px';
+  if (!reduce){ el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+}
+function setSpot(side){ const el = $('spot'); if (el) el.className = 'spot' + (side ? ' on ' + side : ''); }
+function renderTurnIdle(){
+  if (App.animating) return;
+  const g = App.game; setSpot(null);
+  if (!g || g.done || !phaseOpen()) return setTurn('');
+  if (journalRound()) return setTurn('Запишите, что почувствовали');
+  if (!g.picks[ME]) return setTurn('Твой ход', ME, true);
+  setTurn(`Ждём ход ${GEN[OTHER[ME]]}…`, OTHER[ME]);
+}
 function hudBottom(){ const h = $('hud-fire'); return h ? h.offsetTop + h.offsetHeight : 50; }
 function hideBubbles(){ for (const s of SIDES){ clearTimeout(sayTimer[s]); $('say-'+s).classList.add('off'); } }
 /* each side's bubble lives in its own half of the scene, so the two never cover each other */
