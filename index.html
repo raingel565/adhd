@@ -343,13 +343,100 @@ h1{margin:0; font-size:clamp(24px,3.4vw,32px); font-weight:800; letter-spacing:-
 .linkbtn{font:600 13.5px var(--f); color:#c9bcff; background:none; border:0; padding:0; cursor:pointer; text-decoration:underline; text-underline-offset:3px}
 .linkbtn:focus-visible{outline:2px solid #a48bff; outline-offset:2px}
 @media (max-width:760px){ .mtwo{grid-template-columns:minmax(0,1fr)} }
+.landing{position:relative; background:#0c0d11}
+.lscroll{height:620vh; position:relative}
+.lstage{position:sticky; top:0; height:100vh; height:100dvh; overflow:hidden}
+.lstage > canvas,.lstage > svg{position:absolute; inset:0; width:100%; height:100%; display:block}
+.lshade{position:absolute; inset:0; pointer-events:none; background:linear-gradient(90deg, rgba(8,9,14,.62) 0%, rgba(8,9,14,.25) 38%, transparent 60%), linear-gradient(0deg, rgba(8,9,14,.45), transparent 35%)}
+.ltop{position:absolute; top:0; left:0; right:0; display:flex; align-items:center; justify-content:space-between; gap:12px; z-index:3;
+  padding-top:max(18px, env(safe-area-inset-top, 0px)); padding-left:max(24px, env(safe-area-inset-left, 0px)); padding-right:max(24px, env(safe-area-inset-right, 0px))}
+.lbrand{font-weight:800; font-size:18px; letter-spacing:-.01em}
+.lskip{font:600 14px var(--f); color:var(--text); background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.28); border-radius:10px; padding:8px 16px; cursor:pointer; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px)}
+.lskip:hover{background:rgba(255,255,255,.16)}
+.ldots{position:absolute; right:max(20px, env(safe-area-inset-right, 0px)); top:50%; transform:translateY(-50%); display:grid; gap:10px; z-index:3}
+.ldots button{width:10px; height:10px; border-radius:50%; border:1px solid rgba(255,255,255,.6); background:transparent; padding:0; cursor:pointer; transition:background .2s, transform .2s}
+.ldots button.on{background:#fff; transform:scale(1.25)}
+.lskip:focus-visible,.ldots button:focus-visible{outline:2px solid var(--ice); outline-offset:3px}
+.lch{position:absolute; z-index:2; left:max(48px, env(safe-area-inset-left, 0px)); bottom:14vh; max-width:min(520px, calc(100% - 96px)); display:grid; gap:14px; visibility:hidden; will-change:opacity, transform}
+.lch h2{margin:0; font-size:clamp(40px,6.2vw,76px); font-weight:800; letter-spacing:-.03em; line-height:1; text-wrap:balance; text-shadow:0 4px 30px rgba(0,0,0,.35)}
+.lch p{margin:0; font-size:clamp(15px,1.4vw,18px); line-height:1.55; color:#e7e9f0; max-width:44ch; text-shadow:0 2px 12px rgba(0,0,0,.5)}
+.lch .lnum{font-size:13px; letter-spacing:.08em; text-transform:uppercase; color:#c9bcff; font-weight:700}
+.lrule{display:block; width:56px; height:2px; background:rgba(255,255,255,.7)}
+.lch.cover{bottom:9vh; max-width:calc(100% - 96px)}
+.lhuge{margin:0; font-size:clamp(64px,15vw,210px); font-weight:800; letter-spacing:-.045em; line-height:.86; color:#fff; text-shadow:0 8px 40px rgba(0,0,0,.35)}
+.leyebrow{display:flex; align-items:center; gap:10px; font-size:clamp(14px,1.3vw,17px) !important; color:#f2eefa !important}
+.lbars{display:inline-flex; align-items:flex-end; gap:3px; height:16px}
+.lbars i{width:3px; background:#fff; border-radius:2px; animation:bars 1.1s ease-in-out infinite alternate}
+.lbars i:nth-child(1){height:60%} .lbars i:nth-child(2){height:100%; animation-delay:-.4s} .lbars i:nth-child(3){height:40%; animation-delay:-.8s}
+@keyframes bars{to{transform:scaleY(.4)}}
+.lcta{display:flex; flex-wrap:wrap; align-items:center; gap:12px}
+.lhint{font-size:13px; color:#cfd2dc}
+@media (max-width:760px){
+  .lshade{background:linear-gradient(180deg, rgba(8,9,14,.7) 0%, rgba(8,9,14,.35) 45%, transparent 65%)}
+  .lch{left:max(20px, env(safe-area-inset-left, 0px)); right:max(36px, env(safe-area-inset-right, 0px)); bottom:auto; top:13vh; max-width:none}
+  .lch.cover{top:13vh; bottom:auto}
+  .ldots{right:max(10px, env(safe-area-inset-right, 0px))}
+  .ltop{padding-left:max(20px, env(safe-area-inset-left, 0px)); padding-right:max(20px, env(safe-area-inset-right, 0px))}
+}
+@media (prefers-reduced-motion: reduce){ .lbars i{animation:none} }
+.tagsGame{position:absolute; inset:0; pointer-events:none; perspective:700px; overflow:hidden; z-index:1}
+.tchip{position:absolute; white-space:nowrap; font:600 13px var(--f); color:#fff; padding:6px 12px; border-radius:12px;
+  background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.28); box-shadow:0 8px 24px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.18);
+  backdrop-filter:blur(10px) saturate(1.3); -webkit-backdrop-filter:blur(10px) saturate(1.3); text-shadow:0 1px 6px rgba(0,0,0,.35)}
+.tchip.fire{border-color:rgba(255,170,120,.55); background:rgba(255,122,69,.12)}
+.tchip.ice{border-color:rgba(140,215,255,.55); background:rgba(56,198,244,.12)}
+.tchip.pop{opacity:0; animation:tagPop 3.2s cubic-bezier(.2,.8,.2,1) forwards}
+@keyframes tagPop{
+  0%{opacity:0; transform:translate(-50%,-50%) scale(.4) rotateY(-75deg)}
+  16%{opacity:1; transform:translate(-50%,-50%) translate(var(--x),var(--y)) scale(1) rotateY(var(--ry))}
+  78%{opacity:1; transform:translate(-50%,-50%) translate(calc(var(--x)*1.1),calc(var(--y)*1.1 - 12px)) scale(1) rotateY(var(--ry))}
+  100%{opacity:0; transform:translate(-50%,-50%) translate(calc(var(--x)*1.15),calc(var(--y)*1.15 - 22px)) scale(.9) rotateY(var(--ry))}}
+.ltags{position:absolute; inset:0; pointer-events:none; z-index:1; overflow:hidden}
+.ltbox{position:absolute; left:0; top:0; width:0; height:0; perspective:800px; will-change:transform}
+.lchip{left:0; top:0; opacity:0; font-size:clamp(12px,1.2vw,15px); padding:8px 14px;
+  transform:translate(-50%,-50%) scale(.4) rotateY(-80deg); transition:transform .9s cubic-bezier(.2,.8,.2,1), opacity .5s ease; transition-delay:0s}
+.ltbox.show .lchip{opacity:1; transition-delay:var(--d);
+  transform:translate(-50%,-50%) translate(calc(var(--x)*var(--rx)), calc(var(--y)*var(--ryy))) scale(1) rotateY(var(--ry))}
+.lchip > span{display:inline-block; animation:tagBob 3.4s ease-in-out infinite alternate}
+@keyframes tagBob{to{transform:translateY(-7px)}}
+@media (max-width:760px){ .tchip{font-size:11.5px; padding:5px 10px} }
+@media (prefers-reduced-motion: reduce){ .lchip > span{animation:none} .lchip{transition:opacity .3s} }
 
 </style>
 </head>
 <body>
+<section class="landing" id="landing" hidden aria-label="Вступление">
+  <div class="lscroll" id="lscroll">
+    <div class="lstage">
+      <canvas id="lbg" aria-hidden="true"></canvas>
+      <svg id="lsvg" viewBox="0 0 800 340" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <g transform="translate(150,92)"><g id="lh-fire"></g></g>
+        <g transform="translate(650,92) scale(-1,1)"><g id="lh-ice"></g></g>
+      </svg>
+      <canvas id="lfg" aria-hidden="true"></canvas>
+      <div class="lshade" aria-hidden="true"></div>
+      <div class="ltags" aria-hidden="true"><div class="ltbox" id="lt-fire"></div><div class="ltbox" id="lt-ice"></div></div>
+      <div class="ltop"><span class="lbrand">Драконы</span><button class="lskip" id="lSkip" type="button">Пропустить</button></div>
+      <nav class="ldots" aria-label="Главы вступления">
+        <button type="button" aria-label="Обложка"></button><button type="button" aria-label="Огонь"></button><button type="button" aria-label="Лёд"></button><button type="button" aria-label="Драконы"></button><button type="button" aria-label="Правило"></button><button type="button" aria-label="Начать"></button>
+      </nav>
+      <div class="lch cover">
+        <p class="leyebrow"><span class="lbars" aria-hidden="true"><i></i><i></i><i></i></span>Игра о том, как мы слышим друг друга</p>
+        <h1 class="lhuge">ДРАКОНЫ</h1>
+        <div class="lcta"><button class="cta" id="lStart" type="button">Начать путь</button><span class="lhint">или листайте вниз</span></div>
+      </div>
+      <div class="lch"><p class="lnum">01 · Огонь</p><h2>Огонь</h2><p>Черпает силы в близких. Поддерживает партнёра и хочет всегда оставаться на связи. Когда связь пропадает, внутри разгорается тревога.</p><span class="lrule" aria-hidden="true"></span></div>
+      <div class="lch"><p class="lnum">02 · Лёд</p><h2>Лёд</h2><p>Привык справляться сам. Не хочет втягивать близких в свои проблемы и уходит в себя, пока всё не наладится. Со стороны это выглядит как исчезновение.</p><span class="lrule" aria-hidden="true"></span></div>
+      <div class="lch"><p class="lnum">03 · Драконы</p><h2>Драконы</h2><p>Внутри у каждого живёт дракон. Он питается тревогой и раздражением, и каждый неверный шаг его кормит.</p><span class="lrule" aria-hidden="true"></span></div>
+      <div class="lch"><p class="lnum">04 · Правило</p><h2>Только своего</h2><p>Чужого дракона усмирить нельзя. Можно только взять на поводок своего и перестать кормить чужого.</p><span class="lrule" aria-hidden="true"></span></div>
+      <div class="lch"><p class="lnum">05 · Путь</p><h2>Узнай, что чувствовал другой</h2><p>Сыграй за одного из них: вдвоём с партнёром или с ботом.</p>
+        <div class="lcta"><button class="cta" id="lQuiz" type="button">Кто я: огонь или лёд?</button><button class="btn" id="lPlay" type="button">Сразу играть</button></div></div>
+    </div>
+  </div>
+</section>
 <div class="wrap">
   <div class="bar">
-    <div class="brand"><h1>Драконы</h1><span class="pill">Сутки тишины</span><button class="ibtn helpbtn" id="aboutBtn" type="button" aria-label="О чём эта игра" title="О чём эта игра">?</button></div>
+    <div class="brand"><h1>Драконы</h1><span class="pill">Сутки тишины</span><button class="ibtn helpbtn" id="aboutBtn" type="button" aria-label="О чём эта игра" title="О чём эта игра">?</button><button class="ibtn helpbtn" id="introBtn" type="button" aria-label="Смотреть вступление" title="Смотреть вступление"><svg viewBox="0 0 24 24" fill="currentColor" style="width:13px;height:13px"><path d="M8 5v14l11-7z"/></svg></button></div>
     <div class="icons" id="tools" hidden>
       <button class="ibtn" id="restart" type="button" aria-label="Начать заново" title="Начать заново"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v4h4"/></svg></button>
       <button class="ibtn" id="exit" type="button" aria-label="Выйти в меню" title="Выйти в меню"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h4v16h-4"/><path d="M10 8l-4 4 4 4"/><path d="M6 12h10"/></svg></button>
@@ -422,6 +509,7 @@ h1{margin:0; font-size:clamp(24px,3.4vw,32px); font-weight:800; letter-spacing:-
         <canvas id="cv"></canvas>
         <div class="hud fire glass" id="hud-fire"><span class="tile t-or" id="tileFire"></span><div class="meta"><div class="line"><span class="num" id="num-fire"></span><span class="st" id="st-fire"></span></div><div class="trk"><div class="fl" id="fill-fire"></div></div></div></div>
         <div class="hud ice glass" id="hud-ice"><span class="tile t-bl" id="tileIce"></span><div class="meta"><div class="line"><span class="st" id="st-ice"></span><span class="num" id="num-ice"></span></div><div class="trk"><div class="fl" id="fill-ice"></div></div></div></div>
+        <div class="tagsGame" id="tagsGame" aria-hidden="true"></div>
         <div class="say off" id="say-fire"></div>
         <div class="say off" id="say-ice"></div>
         <div class="finale" id="finale" hidden>
@@ -462,8 +550,8 @@ h1{margin:0; font-size:clamp(24px,3.4vw,32px); font-weight:800; letter-spacing:-
     <div class="mhead"><h2 id="aboutTitle">О чём эта игра</h2><button class="ibtn" id="aboutClose" type="button" aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <p>Огонь и Лёд — упрощённые образы двух стилей привязанности из психологии: <b>тревожного</b> и <b>избегающего</b>.</p>
     <div class="mtwo">
-      <div class="mi f"><b>Огонь · тревожный стиль</b><span>В трудный момент тянется к близкому. Тишина и дистанция пугают, хочется убедиться, что связь на месте.</span></div>
-      <div class="mi i"><b>Лёд · избегающий стиль</b><span>В трудный момент уходит в себя. Давление и расспросы заставляют закрыться, силы восстанавливаются в одиночестве.</span></div>
+      <div class="mi f"><b>Огонь · тревожный стиль</b><span>Черпает силы в близких. Поддерживает партнёра и хочет всегда оставаться на связи. Когда связь пропадает, внутри разгорается тревога.</span></div>
+      <div class="mi i"><b>Лёд · избегающий стиль</b><span>Привык справляться сам. Не хочет втягивать близких в свои проблемы и уходит в себя, пока всё не наладится. Со стороны это выглядит как исчезновение.</span></div>
     </div>
     <p>Такие люди часто притягиваются друг к другу и раскачивают друг друга: чем сильнее один тянется, тем дальше уходит другой. Поэтому в игре дракон каждого кормится не партнёром, а собственной реакцией на него.</p>
     <p>Ходы, которые усыпляют драконов, — это то, что психологи называют <b>надёжной привязанностью</b>: говорить о чувствах без упрёков, предупреждать о тишине и возвращаться.</p>
@@ -481,7 +569,8 @@ h1{margin:0; font-size:clamp(24px,3.4vw,32px); font-weight:800; letter-spacing:-
 (function(){
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const OTHER = {fire:'ice', ice:'fire'}, NAME = {fire:'Огонь', ice:'Лёд'}, GEN = {fire:'Огня', ice:'Льда'};
-let G = {fire:'m', ice:'f'}, ME = 'fire';
+const randPair = () => Math.random() < .5 ? {fire:'m', ice:'f'} : {fire:'f', ice:'m'};
+let G = randPair(), ME = 'fire';
 const w = (side, m, f) => G[side] === 'f' ? f : m;
 const $ = id => document.getElementById(id);
 const P = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
@@ -550,7 +639,7 @@ const THOUGHT = {
 
 const STORY = {
   ice: {
-    trait: 'фокус на одном',
+    trait: 'справляется сам',
     story: () => `Последние дни на работе завал: горит проект, сроки не сдвинуть. Ты умеешь собраться и делать что-то одно, поэтому ${w('ice','выключил','выключила')} уведомления и на сутки ${w('ice','ушёл','ушла')} в работу. Сегодня проект сдан, ты наконец ${w('ice','выдохнул','выдохнула')} и пишешь «привет».`,
     facts: [
       () => 'Проект сдан час назад, сил почти не осталось.',
@@ -563,7 +652,7 @@ const STORY = {
     ]
   },
   fire: {
-    trait: 'чувствует всё сразу',
+    trait: 'черпает силы в близких',
     story: () => `Вчера вы договаривались созвониться вечером. Звонка не было, сообщения не прочитаны уже сутки. Дел у тебя тоже хватает, но мысли всё время возвращаются к телефону. И вот приходит «привет», как будто ничего не случилось.`,
     facts: [
       () => `Вчера был тяжёлый день, и ты очень ${w('fire','ждал','ждала')} этого звонка.`,
@@ -728,7 +817,8 @@ const TS = () => firebase.database.ServerValue.TIMESTAMP;
 /* ---------- screens ---------- */
 function showScreen(name){
   App.screen = name;
-  for (const s of ['home','join','lobby','game','quiz']) $(s).hidden = s !== name;
+  for (const s of ['home','join','lobby','game','quiz','landing']) $(s).hidden = s !== name;
+  document.querySelector('.wrap').hidden = name === 'landing';
   $('tools').hidden = !(name === 'game' || name === 'lobby');
   $('restart').hidden = name !== 'game';
   if (name === 'game') requestAnimationFrame(resize);
@@ -915,7 +1005,7 @@ function visualEvent(ev){
   const bump = (s, v, c) => { if (!v) return; V[s] = clamp(V[s] + v); floatNum(s, num(v), c || (v > 0 ? col(s) : '#6ff0ae')); drawStatus(); };
   if (a.kind === 'bad' || a.kind === 'trap'){
     bump(side, ev.self); pulse[side] = 1; lunge[side] = 1; animHero(side, 'flinch');
-    shoot(side, other, 'feed', () => { bump(other, ev.other); animHero(other, 'flinch'); feel(); }, true);
+    shoot(side, other, 'feed', () => { bump(other, ev.other); animHero(other, 'flinch'); feel(); popTags(other, a.kind === 'bad' ? 3 : 2); }, true);
   } else if (a.kind === 'key'){
     tame[side] = 1; bump(side, ev.self); animHero(side, 'relief');
     later(() => { bump(other, ev.other); animHero(other, 'relief'); feel(); }, 650);
@@ -967,7 +1057,7 @@ function renderPanel(){
   const list = tab === 'main' ? g.order[side].map(id=>BY_ID[id]) : tab === 'good' ? ACTIONS[side+'Good'] : ACTIONS[side+'Inner'];
   const el = $('panel'); el.className = 'panel glass ' + side;
   el.innerHTML = `
-    <div class="ph"><span class="tile ${side==='fire'?'t-or':'t-bl'}">${side==='fire'?IC.flame:IC.snow}</span><h3>${NAME[side]}</h3><span class="trait">${side==='fire'?'Чувствует всё сразу':'Фокус на одном'}</span></div>
+    <div class="ph"><span class="tile ${side==='fire'?'t-or':'t-bl'}">${side==='fire'?IC.flame:IC.snow}</span><h3>${NAME[side]}</h3><span class="trait">${side==='fire'?'Черпает силы в близких':'Справляется сам'}</span></div>
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" type="button" id="tab-main" data-tab="main" aria-selected="${tab==='main'}">Действия</button>
       ${g.key[side] ? `<button class="tab" role="tab" type="button" id="tab-good" data-tab="good" aria-selected="${tab==='good'}">Новые</button>` : ''}
@@ -1073,8 +1163,8 @@ function bubble(side, text, think){
 }
 
 /* ---------- canvas loop ---------- */
-const cv = $('cv'), ctx = cv.getContext('2d');
-const bg = $('bg'), bctx = bg.getContext('2d');
+const cv = $('cv'); let ctx = cv.getContext('2d');
+const bg = $('bg'); let bctx = bg.getContext('2d');
 let DPR = 1, CW = 0, CH = 0, SC = 1, OX = 0, OY = 0;
 function resize(){
   const r = cv.getBoundingClientRect(); DPR = Math.min(2, window.devicePixelRatio || 1);
@@ -1121,8 +1211,8 @@ function renderQuiz(){
   QRES = {fire:pct}; try { localStorage.setItem('drakony-quiz', JSON.stringify(QRES)); } catch(e){}
   const type = quizType(pct);
   const desc = {
-    fire:'Ты тянешься к людям. В трудный момент хочешь поделиться и обсудить, а когда близкий пропадает, тревога нарастает быстро. Ты чувствуешь всё сразу.',
-    ice:'Ты восстанавливаешься в тишине. В трудный момент уходишь в себя и решаешь задачу, а давление и расспросы заставляют закрыться сильнее. Ты умеешь сосредоточиться на одном.',
+    fire:'Ты черпаешь силы в близких. Поддерживаешь партнёра и хочешь всегда оставаться на связи, а когда связь пропадает, внутри разгорается тревога.',
+    ice:`Ты ${w(ME,'привык','привыкла')} справляться ${w(ME,'сам','сама')}. Не хочешь втягивать близких в свои проблемы и уходишь в себя, пока всё не наладится. Со стороны это может выглядеть как исчезновение.`,
     mid:'В тебе есть и огонь, и лёд. В одних ситуациях ты тянешься к людям, в других уходишь в себя. Можно сыграть за любую сторону.'
   }[type];
   const sug = type === 'ice' ? 'ice' : 'fire', alt = OTHER[sug];
@@ -1550,6 +1640,189 @@ $('aboutClose').addEventListener('click', closeAbout);
 $('about').addEventListener('click', e => { if (e.target.id === 'about') closeAbout(); });
 addEventListener('keydown', e => { if (e.key === 'Escape' && !$('about').hidden) closeAbout(); });
 
+/* ---------- trigger tags (glass word cloud) ---------- */
+const TRIG = {
+  fire: ['молчание','«прочитано»','тишина','игнор','холод','дистанция','неизвестность','«потом»','«всё норм»','отмена планов'],
+  ice:  ['давление','допрос','упрёки','«надо поговорить»','контроль','звонки','«где ты?»','обиды','срочность','отчёт']
+};
+const shuffled = a => a.map(v => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map(x => x[1]);
+function popTags(side, n){
+  if (reduce) n = Math.min(n, 2);
+  const layer = $('tagsGame'); if (!layer) return;
+  const p = HEAD[side], hx = OX + p.x*SC, hy = OY + (p.y + 55)*SC, R = Math.max(80, 125*SC);
+  const words = shuffled(TRIG[side]).slice(0, n);
+  const base = side === 'fire' ? -0.55 : -Math.PI + 0.55;
+  words.forEach((wd, i) => {
+    const a = base + (side === 'fire' ? 1 : -1)*(i - (n - 1)/2)*0.85 + (Math.random() - .5)*0.25;
+    const el = document.createElement('span');
+    el.className = 'tchip pop ' + side;
+    el.textContent = wd;
+    el.style.left = hx + 'px'; el.style.top = hy + 'px';
+    el.style.setProperty('--x', (Math.cos(a)*R).toFixed(0) + 'px');
+    el.style.setProperty('--y', Math.max(26 - hy, Math.sin(a)*R*0.6 - 14).toFixed(0) + 'px');
+    el.style.setProperty('--ry', ((side === 'fire' ? 1 : -1)*(10 + Math.random()*16)).toFixed(0) + 'deg');
+    el.style.animationDelay = (i*0.22).toFixed(2) + 's';
+    layer.appendChild(el);
+    setTimeout(() => el.remove(), 3400 + i*220);
+  });
+}
+/* landing clouds */
+const LTAG = {fire:null, ice:null, shown:{fire:false, ice:false}};
+function buildLandingTags(){
+  for (const side of SIDES){
+    const box = $('lt-'+side); box.innerHTML = '';
+    const words = TRIG[side].slice(0, 8);
+    const angs = side === 'fire' ? [-160,-125,-90,-55,-20,15,40,165] : [-20,-55,-90,-125,-160,165,140,15];
+    words.forEach((wd, i) => {
+      const a = angs[i]*Math.PI/180;
+      const el = document.createElement('span');
+      el.className = 'tchip lchip ' + side;
+      el.innerHTML = `<span>${esc(wd)}</span>`;
+      el.style.setProperty('--x', Math.cos(a).toFixed(3));
+      el.style.setProperty('--y', Math.sin(a).toFixed(3));
+      el.style.setProperty('--ry', ((Math.cos(a) > 0 ? -1 : 1)*(12 + (i % 3)*7)) + 'deg');
+      el.style.setProperty('--d', (i*0.12).toFixed(2) + 's');
+      el.querySelector('span').style.animationDelay = (-i*0.7).toFixed(1) + 's';
+      box.appendChild(el);
+    });
+  }
+}
+function updateLandingTags(s, cam){
+  const idx = {fire:1, ice:2};
+  for (const side of SIDES){
+    const box = $('lt-'+side), hx = side === 'fire' ? 250 : 550, hy = 200;
+    const x = cam.ox + hx*cam.sc, y = cam.oy + hy*cam.sc, near = Math.abs(s.f - idx[side]);
+    const port = L.H > L.W;
+    const rx = port ? L.W*0.34 : Math.min(L.W*0.34, 120*cam.sc), ry = port ? L.H*0.16 : Math.min(L.H*0.3, 80*cam.sc);
+    box.style.transform = `translate(${x.toFixed(1)}px, ${(port ? y - ry*1.05 : y).toFixed(1)}px)`;
+    box.style.setProperty('--rx', rx.toFixed(0) + 'px'); box.style.setProperty('--ryy', ry.toFixed(0) + 'px');
+    const on = near < 0.32;
+    if (on !== LTAG.shown[side]){ box.classList.toggle('show', on); LTAG.shown[side] = on; }
+  }
+}
+
+/* ---------- landing: scroll story ---------- */
+const LCH = [
+  {pw:470, cx:400, z:1.0,  kf:0.10, ki:0.10, lv:null, hero:{fire:'calm', ice:'calm'}},
+  {pw:460, cx:225, z:1.75, kf:0.62, ki:0.15, lv:null, hero:{fire:'tense', ice:'calm'}},
+  {pw:460, cx:575, z:1.75, kf:0.20, ki:0.62, lv:null, hero:{fire:'calm', ice:'tense'}},
+  {pw:780, cx:400, z:1.05, kf:0.55, ki:0.55, lv:62,   hero:{fire:'tense', ice:'tense'}},
+  {pw:780, cx:400, z:1.15, kf:0.40, ki:0.40, lv:48,   hero:{fire:'tense', ice:'tense'}, leash:true},
+  {pw:600, cx:400, z:1.0,  kf:0.0,  ki:0.0,  lv:0,    hero:{fire:'calm', ice:'calm'}, leash:true, win:true}
+];
+const L = {G:randPair(), p:0, cvF:null, ctxF:null, ctxB:null, W:0, H:0, dpr:1, parts:[], hero:{fire:'', ice:''}, lastCh:-1};
+L.cvB = $('lbg'); L.ctxB = L.cvB.getContext('2d'); L.cvF = $('lfg'); L.ctxF = L.cvF.getContext('2d');
+function lResize(){
+  const r = L.cvB.getBoundingClientRect(); L.dpr = Math.min(2, window.devicePixelRatio || 1);
+  L.W = r.width; L.H = r.height;
+  for (const c of [L.cvB, L.cvF]){ c.width = Math.round(L.W*L.dpr); c.height = Math.round(L.H*L.dpr); }
+}
+new ResizeObserver(lResize).observe(L.cvB);
+const ease = x => x < .5 ? 2*x*x : 1 - Math.pow(-2*x + 2, 2)/2;
+const lerp = (a, b, u) => a + (b - a)*u;
+function lProgress(){
+  const el = $('lscroll'), max = el.offsetHeight - innerHeight;
+  return max > 0 ? Math.max(0, Math.min(1, (scrollY - el.offsetTop)/max)) : 0;
+}
+function lState(p){
+  const f = p*(LCH.length - 1), i = Math.min(LCH.length - 2, Math.floor(f)), u = ease(Math.max(0, Math.min(1, (f - i - 0.25)/0.5)));
+  const a = LCH[i], b = LCH[i + 1];
+  const lvA = a.lv === null ? -1 : a.lv, lvB = b.lv === null ? -1 : b.lv;
+  return {pw:lerp(a.pw, b.pw, u), cx:lerp(a.cx, b.cx, u) + Math.sin(f*Math.PI*2)*16, z:lerp(a.z, b.z, u), kf:lerp(a.kf, b.kf, u), ki:lerp(a.ki, b.ki, u),
+    lv: (lvA < 0 && lvB < 0) ? null : lvA < 0 ? (u > 0.5 ? lvB*(u - 0.5)*2 + 6 : null) : lerp(lvA, lvB < 0 ? 0 : lvB, u),
+    leash: u < 0.5 ? !!a.leash : !!b.leash, win: u < 0.5 ? !!a.win : !!b.win, hero: u < 0.5 ? a.hero : b.hero, f, near: Math.round(f)};
+}
+function lCamera(s, d){
+  d = d === undefined ? 1 : d;
+  const z = Math.max(0.6, 1 + (s.z - 1)*d), pw = s.pw + (800 - s.pw)*(1 - Math.min(1, d));
+  let vw = 800/z;
+  if (L.H > L.W) vw = Math.min(vw, pw);
+  let vh = vw*L.H/L.W;
+  if (vh < 340/z){ vh = 340/z; vw = vh*L.W/L.H; }
+  const tx = 400 + (s.cx - 400)*d;
+  const cx = d <= 1 ? Math.max(vw/2 - 380, Math.min(1180 - vw/2, tx)) : tx, cy = 346 - vh/2;
+  const sc = L.W/vw;
+  return {vw, vh, cx, cy, sc, ox:L.W/2 - cx*sc, oy:L.H/2 - cy*sc};
+}
+function drawForeground(s, t){
+  const c = lCamera(s, 1.3);
+  ctx.setTransform(DPR*c.sc,0,0,DPR*c.sc,DPR*c.ox,DPR*c.oy);
+  const kf = s.kf, ki = s.ki;
+  ctx.fillStyle = mix('#1f1219','#2a0f0c',kf);
+  ctx.beginPath(); ctx.moveTo(-500,360); ctx.quadraticCurveTo(-200,300,40,322); ctx.quadraticCurveTo(160,334,240,360); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = mix('#0d1a22','#1b2731',ki);
+  ctx.beginPath(); ctx.moveTo(560,360); ctx.quadraticCurveTo(660,326,780,322); ctx.quadraticCurveTo(1000,300,1300,360); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = mix('#2a1820','#3a1510',kf); ctx.lineWidth = 3; ctx.lineCap = 'round';
+  for (let i = 0; i < 9; i++){
+    const x = -120 + i*34, h = 16 + (i % 3)*9, sw = reduce ? 0 : Math.sin(t*1.4 + i)*3;
+    ctx.beginPath(); ctx.moveTo(x, 330); ctx.quadraticCurveTo(x + sw, 330 - h*0.6, x + sw*2 + 3, 330 - h); ctx.stroke();
+  }
+  ctx.strokeStyle = mix('#14242e','#22313c',ki);
+  for (let i = 0; i < 9; i++){
+    const x = 700 + i*34, h = 16 + ((i + 1) % 3)*9, sw = reduce ? 0 : Math.sin(t*1.4 + i*1.3)*3;
+    ctx.beginPath(); ctx.moveTo(x, 330); ctx.quadraticCurveTo(x + sw, 330 - h*0.6, x + sw*2 - 3, 330 - h); ctx.stroke();
+  }
+}
+function lText(s){
+  document.querySelectorAll('.lch').forEach((el, i) => {
+    const d = Math.abs(s.f - i), o = Math.max(0, 1 - d*2.2);
+    el.style.opacity = o.toFixed(3);
+    el.style.transform = `translateY(${((s.f - i)*-40).toFixed(1)}px)`;
+    el.style.visibility = o > 0.01 ? 'visible' : 'hidden';
+  });
+  document.querySelectorAll('.ldots button').forEach((d, i) => d.classList.toggle('on', i === s.near));
+}
+function drawLandingFrame(dt, t){
+  if (!L.W) return;
+  const p = lProgress(), s = lState(p), cam = lCamera(s);
+  lText(s); updateLandingTags(s, cam);
+  for (const side of SIDES){
+    const st = s.hero[side] + L.G[side];
+    if (L.hero[side] !== st){ $('lh-'+side).innerHTML = heroSVG(side, L.G[side], s.hero[side]); L.hero[side] = st; }
+  }
+  $('lsvg').setAttribute('viewBox', `${(cam.cx - cam.vw/2).toFixed(2)} ${(cam.cy - cam.vh/2).toFixed(2)} ${cam.vw.toFixed(2)} ${cam.vh.toFixed(2)}`);
+  const sv = {ctx, bctx, parts, DPR, CW, CH, SC, OX, OY, sf:shown.fire, si:shown.ice, fw:FINALE_WIN};
+  bctx = L.ctxB; ctx = L.ctxF; parts = L.parts; DPR = L.dpr; CW = L.W; CH = L.H;
+  SC = cam.sc; OX = cam.ox; OY = cam.oy; PARX = d => lCamera(s, d);
+  shown.fire = s.kf*100; shown.ice = s.ki*100; FINALE_WIN = s.win;
+  try {
+    drawLandscape(t);
+    ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,CW,CH);
+    ctx.setTransform(DPR*SC,0,0,DPR*SC,DPR*OX,DPR*OY);
+    drawFinale(); drawAmbient();
+    if (s.lv !== null){
+      shown.fire = shown.ice = Math.max(0, s.lv);
+      if (s.leash){ drawLeash('fire', t); drawLeash('ice', t); }
+      drawDragon('fire', shown.fire, t); drawDragon('ice', shown.ice, t);
+    }
+    drawParts(dt);
+    drawForeground(s, t);
+  } finally {
+    PARX = null;
+    ctx = sv.ctx; bctx = sv.bctx; parts = sv.parts; DPR = sv.DPR; CW = sv.CW; CH = sv.CH; SC = sv.SC; OX = sv.OX; OY = sv.OY;
+    shown.fire = sv.sf; shown.ice = sv.si; FINALE_WIN = sv.fw;
+  }
+}
+function lScrollTo(i){
+  const el = $('lscroll'), max = el.offsetHeight - innerHeight;
+  window.scrollTo({top: el.offsetTop + max*i/(LCH.length - 1), behavior: reduce ? 'auto' : 'smooth'});
+}
+function showLanding(){ buildLandingTags(); L.G = randPair(); L.hero = {fire:'', ice:''}; showScreen('landing'); window.scrollTo({top:0}); requestAnimationFrame(lResize); }
+function leaveLanding(next){
+  try { localStorage.setItem('drakony-seen', '1'); } catch(e){}
+  showScreen('home'); renderHome(); window.scrollTo({top:0});
+  if (next === 'quiz') startQuiz('home');
+}
+$('lStart').addEventListener('click', () => lScrollTo(1));
+$('lSkip').addEventListener('click', () => leaveLanding());
+$('lQuiz').addEventListener('click', () => leaveLanding('quiz'));
+$('lPlay').addEventListener('click', () => leaveLanding());
+document.querySelectorAll('.ldots button').forEach((b, i) => b.addEventListener('click', () => lScrollTo(i)));
+$('introBtn').addEventListener('click', showLanding);
+function seenLanding(){ try { return localStorage.getItem('drakony-seen') === '1'; } catch(e){ return true; } }
+
+let PARX = null;
+function LT(b, d){ if (PARX){ const c = PARX(d); b.setTransform(DPR*c.sc,0,0,DPR*c.sc,DPR*c.ox,DPR*c.oy); } else b.setTransform(DPR*SC,0,0,DPR*SC,DPR*OX,DPR*OY); }
 const hexRGB = h => { const n = parseInt(h.slice(1),16); return [(n>>16)&255,(n>>8)&255,n&255]; };
 function mix(a, b, t){ t = Math.max(0, Math.min(1, t)); const A = hexRGB(a), B = hexRGB(b); return `rgb(${A.map((v,i)=>Math.round(v + (B[i]-v)*t)).join(',')})`; }
 function mix3(a, b, c, t){ return t < .5 ? mix(a, b, t*2) : mix(b, c, (t - .5)*2); }
@@ -1570,7 +1843,7 @@ function drawLandscape(t){
   const sw = 80*SC;
   for (let i=0;i<16;i++){ b.globalAlpha = (i+1)/17; b.fillRect(midX - sw + i*sw/16, 0, sw/16 + 1, CH); }
   b.globalAlpha = 1;
-  b.setTransform(DPR*SC,0,0,DPR*SC,DPR*OX,DPR*OY);
+  LT(b, 0.62);
   for (const [x,y,ph] of STARS){ b.globalAlpha = Math.max(0,(1 - ki)*(0.4 + 0.4*Math.sin(t*1.5 + ph))); b.fillStyle = '#ffffff'; b.fillRect(x, y, 1.6, 1.6); }
   b.globalAlpha = 1;
   const sunY = 104 + kf*72, sunC = mix('#ffd39a','#ff6a3d',kf);
@@ -1591,6 +1864,7 @@ function drawLandscape(t){
     for (let i=0;i<4;i++){ const x = -120 + ((t*7 + i*150) % 560), y = 70 + i*26; b.beginPath(); b.ellipse(x, y, 70, 16, 0, 0, Math.PI*2); b.fill(); }
   }
   b.globalAlpha = 1;
+  LT(b, 0.76);
   poly(b, [...FIRE_MTN, [400,340], [-400,340]], mix('#6a4656','#8a3530',kf));
   poly(b, [...ICE_MTN, [1200,340], [400,340]], mix('#2f4b66','#56636f',ki));
   const capH = 10 + ki*46;
@@ -1601,6 +1875,7 @@ function drawLandscape(t){
     const L = [px + (lx-px)*fl, py + (ly-py)*fl], Rr = [px + (rx-px)*fr, py + (ry-py)*fr];
     poly(b, [[px,py], Rr, [(px + Rr[0])/2, (py + Rr[1])/2 - 4], [px, py + capH*0.75], [(px + L[0])/2, (py + L[1])/2 - 2], L], '#e6f0f6');
   }
+  LT(b, 0.86);
   b.fillStyle = mix('#3f79a3','#cfe2ee',ki); b.fillRect(400, 236, 800, 26);
   if (ki < 0.55){
     b.globalAlpha = (0.55 - ki)*1.6; b.strokeStyle = '#a9dcff'; b.lineWidth = 2; b.lineCap = 'round';
@@ -1611,6 +1886,7 @@ function drawLandscape(t){
     b.moveTo(700, 238); b.lineTo(735, 249); b.lineTo(790, 244); b.moveTo(860, 256); b.lineTo(905, 244); b.lineTo(960, 252); b.stroke();
   }
   b.globalAlpha = 1;
+  LT(b, 0.94);
   b.fillStyle = mix3('#7a4f50','#97503d','#a8402c',kf);
   b.beginPath(); b.moveTo(-400,272); b.quadraticCurveTo(-300,244,-200,266); b.quadraticCurveTo(-100,290,0,264); b.quadraticCurveTo(100,238,200,266); b.quadraticCurveTo(300,292,400,268); b.lineTo(400,340); b.lineTo(-400,340); b.closePath(); b.fill();
   b.fillStyle = mix('#2c5249','#9fb3c2',ki);
@@ -1634,8 +1910,10 @@ function drawLandscape(t){
       if (ki > 0.3){ b.globalAlpha = Math.min(1, (ki - 0.3)*2.5); poly(b, [[x - wd*0.35, ty - 22*s*0.65], [x + wd*0.35, ty - 22*s*0.65], [x, ty - 22*s]], '#eef5f9'); b.globalAlpha = 1; }
     }
   }
+  LT(b, 1);
   b.fillStyle = mix('#4c3236','#6e2a22',kf); b.fillRect(-400, 318, 800, 60);
   b.fillStyle = mix('#203b38','#b8cad6',ki); b.fillRect(400, 318, 800, 60);
+  LT(b, 0.7);
   b.lineWidth = 2; b.lineCap = 'round'; b.lineJoin = 'round';
   const birds = (k, x0, span, col) => {
     const a = Math.max(0, Math.min(1, (0.42 - k)*4)); if (!a || reduce) return;
@@ -1858,11 +2136,23 @@ function drawRings(dt, t){
 }
 function drawFinale(){
   if (!FINALE_WIN) return;
-  if (!reduce && Math.random() < 0.6) emit('steam', 400 + (Math.random()-.5)*60, 250, '#dfe7ef');
-  const cols = ['#ff7a45','#ffc845','#3ee08f','#38c6f4','#7c6cff'];
-  ctx.save(); ctx.lineWidth = 6; ctx.globalAlpha = 0.6;
-  cols.forEach((c,i)=>{ ctx.strokeStyle = c; ctx.shadowColor = c; ctx.shadowBlur = 10; ctx.beginPath(); ctx.arc(400, 300, 170 - i*8, Math.PI*1.12, Math.PI*1.88); ctx.stroke(); });
+  const t = performance.now()/1000;
+  if (!reduce && Math.random() < 0.5) emit('steam', 400 + (Math.random()-.5)*60, 250, '#dfe7ef');
+  ctx.save();
+  const g = ctx.createLinearGradient(250, 0, 550, 0);
+  g.addColorStop(0, '#ffb15c'); g.addColorStop(0.5, '#fff1d6'); g.addColorStop(1, '#8fd8ff');
+  ctx.strokeStyle = g; ctx.lineCap = 'round';
+  ctx.globalAlpha = 0.25; ctx.lineWidth = 18; ctx.shadowColor = '#ffe2b0'; ctx.shadowBlur = 24;
+  ctx.beginPath(); ctx.moveTo(262, 196); ctx.quadraticCurveTo(400, 92, 538, 196); ctx.stroke();
+  ctx.globalAlpha = 0.85; ctx.lineWidth = 3.5; ctx.shadowBlur = 12;
+  ctx.beginPath(); ctx.moveTo(262, 196); ctx.quadraticCurveTo(400, 92, 538, 196); ctx.stroke();
+  for (let i = 0; i < 7; i++){
+    const u = ((t*0.12 + i/7) % 1), x = (1-u)*(1-u)*262 + 2*(1-u)*u*400 + u*u*538, y = (1-u)*(1-u)*196 + 2*(1-u)*u*92 + u*u*196;
+    ctx.globalAlpha = 0.9*Math.sin(Math.PI*u); ctx.fillStyle = u < .5 ? '#ffd39a' : '#cdeeff';
+    ctx.beginPath(); ctx.arc(x, y, 3.2, 0, Math.PI*2); ctx.fill();
+  }
   ctx.restore();
+  if (!reduce && Math.random() < 0.06) emit('heart', 400 + (Math.random()-.5)*120, 170, Math.random() < .5 ? '#ffb3a0' : '#bfe6ff');
 }
 
 
@@ -1870,6 +2160,7 @@ function drawFinale(){
 let last = performance.now();
 function frame(now){
   const dt = Math.min(0.05, (now - last)/1000); last = now; const t = now/1000;
+  if (App.screen === 'landing') drawLandingFrame(dt, t);
   if (App.screen === 'game' && App.game && CW > 0){
     for (const side of SIDES){
       shown[side] += (V[side] - shown[side]) * Math.min(1, dt*3.5);
@@ -1902,7 +2193,7 @@ function route(){
   const c = (location.hash || '').slice(1).toUpperCase();
   if (/^[A-Z0-9]{4}$/.test(c)){ enterRoom(c); return; }
   if (App.mode === 'room') leave();
-  if (App.mode !== 'bot'){ showScreen('home'); renderHome(); }
+  if (App.mode !== 'bot'){ if (!seenLanding()) showLanding(); else { showScreen('home'); renderHome(); } }
 }
 addEventListener('hashchange', route);
 $('tileFire').innerHTML = IC.flame; $('tileIce').innerHTML = IC.snow;
