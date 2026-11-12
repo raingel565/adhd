@@ -65,7 +65,7 @@ h1{margin:0; font-size:clamp(24px,3.4vw,32px); font-weight:800; letter-spacing:-
 .seg button[aria-pressed="true"]{background:rgba(255,255,255,.12); color:var(--text); box-shadow:inset 0 1px 0 rgba(255,255,255,.1)}
 
 .stagebox{position:sticky; top:env(safe-area-inset-top,0px); z-index:5; padding-block:4px 6px; display:grid; gap:8px; background:linear-gradient(var(--bg) 85%, transparent)}
-.scene{position:relative; height:clamp(220px, 46vw, 42vh); border-radius:26px; overflow:hidden; border:1px solid var(--line-2); box-shadow:var(--shadow); background:#1b1f2b}
+.scene{position:relative; height:clamp(300px, 50vw, 58vh); border-radius:26px; overflow:hidden; border:1px solid var(--line-2); box-shadow:var(--shadow); background:#1b1f2b}
 .scene > svg,.scene > canvas{position:absolute; inset:0; width:100%; height:100%; display:block}
 .scene > canvas{pointer-events:none}
 .hud{position:absolute; top:10px; display:flex; align-items:center; gap:8px; padding:6px 10px 6px 6px; border-radius:16px; min-width:0; max-width:44%}
@@ -87,14 +87,14 @@ h1{margin:0; font-size:clamp(24px,3.4vw,32px); font-weight:800; letter-spacing:-
 .t-pk{background:linear-gradient(160deg,#ff7ce0,#d43fb0)} .t-pu{background:linear-gradient(160deg,#a48bff,#6a4be0)}
 .t-gr{background:linear-gradient(160deg,#58eb93,#1fb45d)} .t-te{background:linear-gradient(160deg,#4fe3e0,#119fb4)}
 .t-rd{background:linear-gradient(160deg,#ff8a7a,#e8433b)}
-.say{position:absolute; z-index:2; transform:translate(-50%,-100%); max-width:min(46%,280px); padding:8px 12px; border-radius:14px; font-size:13px; line-height:1.35;
+.say{position:absolute; z-index:4; transform:translate(-50%,-100%); max-width:min(46%,280px); padding:8px 12px; border-radius:14px; font-size:13px; line-height:1.35;
   background:rgba(18,20,26,.82); border:1px solid var(--line-2); color:var(--text); pointer-events:none; transition:opacity .3s; text-align:center;
   backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px)}
-.say::after{content:""; position:absolute; left:50%; bottom:-6px; width:10px; height:10px; transform:translateX(-50%) rotate(45deg); background:inherit; border-right:1px solid var(--line-2); border-bottom:1px solid var(--line-2)}
+.say::after{content:""; position:absolute; left:var(--tail,50%); bottom:-6px; width:10px; height:10px; transform:translateX(-50%) rotate(45deg); background:inherit; border-right:1px solid var(--line-2); border-bottom:1px solid var(--line-2)}
 .say.think{font-style:italic; color:#e6e1ff; background:rgba(58,50,108,.82); border:1px solid rgba(170,150,255,.5); border-radius:26px; padding:10px 15px;
   transform:translate(-50%, calc(-100% - 20px)); box-shadow:0 0 18px rgba(124,108,255,.25)}
-.say.think::after{width:13px; height:13px; border-radius:50%; left:42%; bottom:-17px; transform:translateX(-50%); border:1px solid rgba(170,150,255,.5)}
-.say.think::before{content:""; position:absolute; width:7px; height:7px; border-radius:50%; left:37%; bottom:-28px; background:rgba(58,50,108,.82); border:1px solid rgba(170,150,255,.5)}
+.say.think::after{width:13px; height:13px; border-radius:50%; left:calc(var(--tail,50%) - 4px); bottom:-17px; transform:translateX(-50%); border:1px solid rgba(170,150,255,.5)}
+.say.think::before{content:""; position:absolute; width:7px; height:7px; border-radius:50%; left:calc(var(--tail,50%) - 12px); bottom:-28px; background:rgba(58,50,108,.82); border:1px solid rgba(170,150,255,.5)}
 .trait{font-size:12px; font-weight:600; color:var(--muted); padding:4px 10px; border-radius:999px; border:1px solid var(--line-2); margin-left:auto; white-space:nowrap}
 .intro{border-radius:22px; padding:16px 18px; display:grid; gap:10px}
 .intro h2{margin:0; font-size:18px; font-weight:800}
@@ -169,6 +169,7 @@ h1{margin:0; font-size:clamp(24px,3.4vw,32px); font-weight:800; letter-spacing:-
   .hud .st{display:none}
   .tile{width:30px; height:30px; border-radius:10px} .tile svg{width:16px; height:16px}
   .say{font-size:12px; padding:6px 9px}
+  .scene{height:clamp(290px, 80vw, 48vh)}
 }
 @media (prefers-reduced-motion: reduce){
   .hin.throw,.hin.flinch,.hin.relief,.hin.swap,.flick,.spin,.breathe,.react.pop,.finale .card{animation:none}
@@ -401,6 +402,15 @@ h1{margin:0; font-size:clamp(24px,3.4vw,32px); font-weight:800; letter-spacing:-
 @keyframes tagBob{to{transform:translateY(-7px)}}
 @media (max-width:760px){ .tchip{font-size:11.5px; padding:5px 10px} }
 @media (prefers-reduced-motion: reduce){ .lchip > span{animation:none} .lchip{transition:opacity .3s} }
+/* scenario picker */
+.scnpick{display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%}
+.scnpick button{display:flex; flex-direction:column; align-items:flex-start; gap:3px; text-align:left; font:inherit; color:var(--muted); background:rgba(255,255,255,.04); border:1px solid var(--line); border-radius:16px; padding:12px 14px; cursor:pointer; transition:background .2s, border-color .2s, color .2s; min-width:0}
+.scnpick button b{font:700 15px var(--f); color:var(--text)}
+.scnpick .sn{font:600 11px var(--f); letter-spacing:.12em; color:var(--muted)}
+.scnpick .ss{font-size:12.5px; line-height:1.35}
+.scnpick button[aria-pressed="true"]{background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.28); color:var(--text); box-shadow:inset 0 1px 0 rgba(255,255,255,.1)}
+.scnpick button:focus-visible{outline:2px solid var(--ice); outline-offset:2px}
+@media (max-width:420px){ .scnpick{grid-template-columns:1fr} }
 
 </style>
 </head>
@@ -436,7 +446,7 @@ h1{margin:0; font-size:clamp(24px,3.4vw,32px); font-weight:800; letter-spacing:-
 </section>
 <div class="wrap">
   <div class="bar">
-    <div class="brand"><h1>Драконы</h1><span class="pill">Сутки тишины</span><button class="ibtn helpbtn" id="aboutBtn" type="button" aria-label="О чём эта игра" title="О чём эта игра">?</button><button class="ibtn helpbtn" id="introBtn" type="button" aria-label="Смотреть вступление" title="Смотреть вступление"><svg viewBox="0 0 24 24" fill="currentColor" style="width:13px;height:13px"><path d="M8 5v14l11-7z"/></svg></button></div>
+    <div class="brand"><h1>Драконы</h1><span class="pill scnpill">Сутки тишины</span><button class="ibtn helpbtn" id="aboutBtn" type="button" aria-label="О чём эта игра" title="О чём эта игра">?</button><button class="ibtn helpbtn" id="introBtn" type="button" aria-label="Смотреть вступление" title="Смотреть вступление"><svg viewBox="0 0 24 24" fill="currentColor" style="width:13px;height:13px"><path d="M8 5v14l11-7z"/></svg></button></div>
     <div class="icons" id="tools" hidden>
       <button class="ibtn" id="restart" type="button" aria-label="Начать заново" title="Начать заново"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v4h4"/></svg></button>
       <button class="ibtn" id="exit" type="button" aria-label="Выйти в меню" title="Выйти в меню"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h4v16h-4"/><path d="M10 8l-4 4 4 4"/><path d="M6 12h10"/></svg></button>
@@ -447,6 +457,10 @@ h1{margin:0; font-size:clamp(24px,3.4vw,32px); font-weight:800; letter-spacing:-
     <h2 id="homeTitle">Кем вы играете?</h2>
     <p class="lead">Нажмите на героя, за которого играете, и выберите пол обоих.</p>
     <button class="qbadge" id="qStart" type="button"><span class="tile t-pu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9a3 3 0 1 1 4 2.8c-.7.4-1 1-1 1.7V14"/><circle cx="12" cy="18" r=".6"/></svg></span><span id="qBadge"></span><span class="chev">›</span></button>
+    <div class="scnpick" role="group" aria-label="Сценарий">
+      <button type="button" data-scn="s1"><span class="sn">01</span><b>Сутки тишины</b><span class="ss">Сутки без связи, а потом «привет»</span></button>
+      <button type="button" data-scn="s2"><span class="sn">02</span><b>Анонс грозы</b><span class="ss">«Вечером надо обсудить один момент»</span></button>
+    </div>
     <div class="roles">
       <div class="pick fire" id="pick-fire">
         <button class="rolebtn" type="button" id="role-fire" data-role="fire"><svg viewBox="0 0 200 230" id="prevFire" aria-hidden="true"></svg><span class="nm">Огонь<span class="me">это я</span></span></button>
@@ -474,7 +488,7 @@ h1{margin:0; font-size:clamp(24px,3.4vw,32px); font-weight:800; letter-spacing:-
 
   <section class="lobby glass" id="join" hidden aria-labelledby="jTitle">
     <h2 id="jTitle">Приглашение в комнату <span id="jCode"></span></h2>
-    <p class="muted">Вы играете за <b id="jRole"></b>. Выберите пол своего героя.</p>
+    <p class="muted">Сценарий «<b class="scnpill"></b>». Вы играете за <b id="jRole"></b>. Выберите пол своего героя.</p>
     <div class="pick" id="jPick" style="max-width:240px; width:100%">
       <svg viewBox="0 0 200 230" id="jPrev" aria-hidden="true"></svg>
       <div class="seg" role="group" aria-label="Пол вашего героя">
@@ -502,7 +516,7 @@ h1{margin:0; font-size:clamp(24px,3.4vw,32px); font-weight:800; letter-spacing:-
     <div class="stagebox">
       <div class="scene" id="scene">
         <canvas id="bg" aria-hidden="true"></canvas>
-        <svg viewBox="0 0 800 340" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Сцена: Огонь и Лёд со своими драконами">
+        <svg viewBox="0 0 800 340" preserveAspectRatio="xMidYMax meet" role="img" aria-label="Сцена: Огонь и Лёд со своими драконами">
           <g id="hero-fire" transform="translate(150,92)"><g class="hin" id="hin-fire"></g></g>
           <g id="hero-ice" transform="translate(650,92) scale(-1,1)"><g class="hin" id="hin-ice"></g></g>
         </svg>
@@ -596,7 +610,7 @@ const IC = {
 const TILES = ['t-or','t-bl','t-pk','t-pu','t-gr','t-te','t-rd'];
 
 
-const ACTIONS = {
+const S1_ACTIONS = {
   fire: [
     {id:'f1', kind:'bad', d:18, ic:'chat', label:()=>`«Где ты ${w('ice','пропадал','пропадала')}?!» и ещё пять сообщений следом`, say:()=>`Где ты ${w('ice','пропадал','пропадала')}?! Ответь! Алло?!`, meant:()=>`Мне страшно, что с тобой что-то случилось или я тебе больше не ${w('fire','нужен','нужна')}.`, feel:()=>'Меня допрашивают. Хочется исчезнуть ещё сильнее.', self:()=>'Не могу остановиться. Мне страшно.', why:()=>'Тревога взяла верх. Дракон Огня плюётся упрёками, и дракон Льда растёт.'},
     {id:'f2', kind:'bad', d:15, ic:'phone', label:()=>'Позвонить ещё раз. И ещё.', say:()=>'Звонок. Ещё звонок. И ещё один.', meant:()=>'Просто дай знать, что ты есть.', feel:()=>`Телефон разрывается. Как будто я ${w('ice','виноват','виновата')}.`, self:()=>'Ну возьми же трубку…', why:()=>'Дракон Огня давит звонками. Лёд слышит требование отчёта.'},
@@ -630,14 +644,13 @@ const ACTIONS = {
     {id:'ii2', kind:'inner', d:8, ic:'pause', label:()=>'Вдох и пауза перед ответом', say:()=>'Вдох. Пауза. Потом отвечу.', think:true, why:()=>'Пауза гасит раздражение. Дракон Льда утихает.'}
   ]
 };
-const BY_ID = {}; Object.values(ACTIONS).flat().forEach(a => BY_ID[a.id] = a);
-const THOUGHT = {
+const S1_THOUGHT = {
   fire: st => st === 'peak' ? 'Меня вычеркнули…' : st === 'tense' ? `Почему ${w('ice','он','она')} молчит?` : 'Можно выдохнуть',
   ice:  st => st === 'peak' ? 'Опять требуют отчёта…' : st === 'tense' ? 'Хочется спрятаться' : 'Можно открыться'
 };
 
 
-const STORY = {
+const S1_STORY = {
   ice: {
     trait: 'справляется сам',
     story: () => `Последние дни на работе завал: горит проект, сроки не сдвинуть. Ты умеешь собраться и делать что-то одно, поэтому ${w('ice','выключил','выключила')} уведомления и на сутки ${w('ice','ушёл','ушла')} в работу. Сегодня проект сдан, ты наконец ${w('ice','выдохнул','выдохнула')} и пишешь «привет».`,
@@ -665,6 +678,137 @@ const STORY = {
     ]
   }
 };
+
+const S1_AGREE = [
+  {id:'a1', who:'ice', from:['ig2'], text:'Если мне нужна тишина, я напишу одно слово и вернусь.'},
+  {id:'a2', who:'fire', from:['fk'], text:'Если мне тревожно, я скажу об этом прямо, без упрёков.'},
+  {id:'a3', who:'fire', from:['fg1'], text:'Пока ты в тишине, я не засыпаю тебя сообщениями: одно «я рядом» и жду.'},
+  {id:'a4', who:'ice', from:['ik'], text:'Когда вернусь, коротко объясню, что было, а не просто «всё норм».'},
+  {id:'a5', who:'both', from:['ig1'], text:'Сложные разговоры переносим на вечер, когда у обоих есть силы.'},
+  {id:'a6', who:'fire', from:['fi1','fi2'], text:'Когда накрывает тревога, сначала напоминаю себе: молчание ещё не отказ.'},
+  {id:'a7', who:'ice', from:['ii1','ii2'], text:'Перед резким ответом делаю паузу.'},
+  {id:'a8', who:'fire', from:['fg2'], text:'Мне достаточно короткого сигнала, подробности могут подождать.'}
+];
+
+const S1_TRIG = {
+  fire: ['молчание','«прочитано»','тишина','игнор','холод','дистанция','неизвестность','«потом»','«всё норм»','отмена планов'],
+  ice:  ['давление','допрос','упрёки','«надо поговорить»','контроль','звонки','«где ты?»','обиды','срочность','отчёт']
+};
+
+/* ---------- scenario 2: «Анонс грозы» ---------- */
+const S2_ACTIONS = {
+  fire: [
+    {id:'tf1', kind:'bad', d:18, ic:'chat', label:()=>'«Что случилось? Скажи сейчас!»', say:()=>'Что случилось?! Скажи сейчас, я не могу ждать до вечера!', meant:()=>'Мне очень страшно. Я не выдержу полдня в неизвестности.', feel:()=>'Меня допрашивают. Я ещё ничего не сказал(а), а уже должен(на) оправдываться.', self:()=>'Я не могу ждать. Мне страшно.', why:()=>'Тревога взяла верх. Дракон Огня требует ответа, и дракон Льда душит необходимостью оправдываться.'},
+    {id:'tf2', kind:'bad', d:16, ic:'bolt', label:()=>'«Ты хочешь расстаться, да? Скажи честно»', say:()=>'Ты хочешь расстаться, да? Просто скажи честно.', meant:()=>`Я боюсь тебя потерять. Мне нужно знать, что ты ещё со мной.`, feel:()=>'Какое «расстаться»? Я хотел(а) обсудить выходные. Из мелочи делают конец света.', self:()=>'Лучше узнать худшее сразу.', why:()=>'Дракон Огня дорисовал худший финал. Лёд слышит трагедию на пустом месте.'},
+    {id:'tf3', kind:'bad', d:15, ic:'phone', label:()=>'Звонить, пока не возьмёт трубку', say:()=>'Звонок. Ещё звонок. «Возьми трубку».', meant:()=>'Просто скажи хоть что-то, чтобы я смог(ла) выдохнуть.', feel:()=>'Меня дёргают посреди рабочего дня. Хочется выключить телефон.', self:()=>'Ну возьми же…', why:()=>'Дракон Огня давит звонками. Льду хочется закрыться ещё сильнее.'},
+    {id:'tf4', kind:'trap', d:10, ic:'dots', label:()=>'Ответить «Ок.» и затаиться до вечера', say:()=>'Ок.', meant:()=>'Мне страшно, но я не покажу этого.', feel:()=>'«Ок.» с точкой. Похоже, вечером будет буря. Уже не хочется ничего обсуждать.', self:()=>'Пусть не думает, что мне страшно.', why:()=>'Похоже на спокойствие, но дракон просто затаился. Лёд чувствует холод и готовится к обороне.'},
+    {id:'tf5', kind:'trap', d:9, ic:'ask', label:()=>'«Ну хоть намекни: это про нас?»', say:()=>'Ну хоть намекни: это про нас?', meant:()=>'Мне бы хоть немного ясности.', feel:()=>'Всё равно выпытывают, просто мягче.', self:()=>'Я же спокойно спрашиваю…', why:()=>'Мягкий тон, но это всё тот же допрос.'},
+    {id:'tfk', kind:'key', d:8, ic:'chat', label:()=>'«Мне тревожно от таких анонсов. Скажи хотя бы: это серьёзное или бытовое?»', say:()=>'Мне тревожно от таких анонсов. Скажи хотя бы: это что-то серьёзное или бытовое?', meant:()=>'Мне нужно одно слово, чтобы спокойно дожить до вечера.', feel:()=>'Простой вопрос, на него легко ответить. Меня не допрашивают.', self:()=>'Получилось сказать про тревогу и попросить ясности без упрёков.', why:()=>'Огонь удержал своего дракона: назвал тревогу и попросил одно слово, а не подробности. Открылись новые действия.'}
+  ],
+  fireGood: [
+    {id:'tfg1', kind:'good', d:14, ic:'heart', label:()=>'«Хорошо, вечером поговорим. Буду дома к семи»', say:()=>'Хорошо, вечером поговорим. Буду дома к семи.', meant:()=>'Я готов(а) к разговору и не тороплю тебя.', feel:()=>'Меня не торопят. Можно спокойно доработать день.', self:()=>'Я могу подождать.', why:()=>'Огонь спокоен, и Льду не нужно оправдываться заранее.'},
+    {id:'tfg2', kind:'good', d:12, ic:'link', label:()=>'«В следующий раз пиши тему сразу, хоть одним словом»', say:()=>'В следующий раз пиши тему сразу, хоть одним словом. Мне так спокойнее.', meant:()=>'Мне хватит одного слова, чтобы не накручивать себя.', feel:()=>'Это несложно. Так я смогу.', self:()=>'Я попросил(а) о том, что мне нужно.', why:()=>'Просьба без упрёка, её легко выполнить.'}
+  ],
+  fireInner: [
+    {id:'tfi1', kind:'inner', d:10, ic:'mind', label:()=>'Напомнить себе: «надо поговорить» ещё не приговор', say:()=>'«Надо поговорить» ещё не значит, что меня бросают.', think:true, why:()=>'Огонь успокаивает своего дракона: разговор ещё не приговор.'},
+    {id:'tfi2', kind:'inner', d:8, ic:'leaf', label:()=>'Отделить факты от страхов', say:()=>'Факт: вечером разговор. Всё остальное я додумываю.', think:true, why:()=>'Факты отделены от страхов. Дракон Огня утихает.'}
+  ],
+  ice: [
+    {id:'ti1', kind:'bad', d:18, ic:'wave', label:()=>'«Всё потом» и закрыться', say:()=>'Всё потом.', meant:()=>'Сейчас нет времени объяснять, вечером спокойно обсудим.', feel:()=>'«Потом». Значит, всё настолько плохо, что даже сказать нельзя.', self:()=>'Не до этого сейчас, у меня работа.', why:()=>'Дракон Льда захлопнул дверь. Дракон Огня растёт от неизвестности.'},
+    {id:'ti2', kind:'bad', d:16, ic:'eye', label:()=>'Прочитать вопросы и не ответить', say:()=>'…', meant:()=>'Отвечу вечером, сейчас не могу.', feel:()=>'Прочитано, и тишина. Я на эшафоте до вечера.', self:()=>'Вечером всё обсудим, зачем сейчас.', why:()=>'Дракон Льда молчит. Для Огня тишина звучит как приговор.'},
+    {id:'ti3', kind:'bad', d:15, ic:'mute', label:()=>'«Опять ты устраиваешь драму на пустом месте»', say:()=>'Опять ты устраиваешь драму на пустом месте.', meant:()=>'Мне тяжело, когда простой вопрос превращается в трагедию.', feel:()=>'Мой страх назвали драмой. Со мной что-то не так.', self:()=>'Ну сколько можно.', why:()=>'Раздражение взяло верх. Дракон Льда бьёт холодом по Огню.'},
+    {id:'ti4', kind:'trap', d:9, ic:'dots', label:()=>'«Ничего страшного, вечером узнаешь»', say:()=>'Ничего страшного, вечером узнаешь.', meant:()=>'Не волнуйся, правда мелочь.', feel:()=>'«Узнаешь»… Звучит как сюрприз, которого я боюсь.', self:()=>'Я же сказал(а), что ничего страшного.', why:()=>'Похоже на успокоение, но тайна осталась. Дракон Огня кормится загадкой.'},
+    {id:'ti5', kind:'trap', d:8, ic:'smile', label:()=>'Отправить сердечко и уйти в дела', say:()=>'❤️', meant:()=>'Всё хорошо, не переживай.', feel:()=>'Сердечко. Но что за «момент»? Я всё ещё не понимаю.', self:()=>'Так проще, чем объяснять.', why:()=>'Мило, но вопрос остался без ответа.'},
+    {id:'tik', kind:'key', d:8, ic:'chat', label:()=>'«Прости, звучало пугающе. Ничего серьёзного: хочу обсудить выходные»', say:()=>'Прости, это звучало пугающе. Ничего серьёзного: хочу обсудить, как проведём выходные. Вечером расскажу.', meant:()=>'Это бытовой вопрос. Между нами всё хорошо.', feel:()=>'Это просто про выходные. Можно выдохнуть.', self:()=>'Одна фраза, и не пришлось оправдываться весь день.', why:()=>'Лёд удержал своего дракона и назвал тему. Открылись новые действия.'}
+  ],
+  iceGood: [
+    {id:'tig1', kind:'good', d:14, ic:'call', label:()=>'«Давай в семь за ужином? Минут на десять»', say:()=>'Давай в семь за ужином? Это минут на десять.', meant:()=>'Разговор будет коротким и спокойным.', feel:()=>'Есть время и рамки. Уже не страшно.', self:()=>'Так и мне спокойнее.', why:()=>'Лёд дал время и рамки, и Огню не нужно гадать.'},
+    {id:'tig2', kind:'good', d:12, ic:'link', label:()=>'«В следующий раз сразу напишу тему, чтобы не пугать»', say:()=>'В следующий раз сразу напишу тему, чтобы не пугать.', meant:()=>'Я не хотел(а) тебя напугать.', feel:()=>'Теперь «надо поговорить» не будет звучать как гроза.', self:()=>'Это несложно, а спокойнее обоим.', why:()=>'Анонс больше не будет пугать.'}
+  ],
+  iceInner: [
+    {id:'tii1', kind:'inner', d:10, ic:'mind', label:()=>'«Это не допрос, ему просто страшно»', say:()=>'Это не допрос. Просто страшно.', think:true, why:()=>'Лёд успокаивает своего дракона: на него не нападают.'},
+    {id:'tii2', kind:'inner', d:8, ic:'pause', label:()=>'Вдох: одна фраза сейчас сбережёт вечер', say:()=>'Вдох. Одна фраза сейчас сбережёт весь вечер.', think:true, why:()=>'Пауза гасит раздражение. Дракон Льда утихает.'}
+  ]
+};
+/* gendered patches (keep the table above readable) */
+(() => {
+  const B = {}; Object.values(S2_ACTIONS).flat().forEach(a => B[a.id] = a);
+  B.tf1.feel = () => `Меня допрашивают. Я ещё ничего не ${w('ice','сказал','сказала')}, а уже ${w('ice','должен','должна')} оправдываться.`;
+  B.tf2.feel = () => `Какое «расстаться»? Я ${w('ice','хотел','хотела')} обсудить выходные. Из мелочи делают конец света.`;
+  B.tf3.meant = () => `Просто скажи хоть что-то, чтобы я ${w('fire','смог','смогла')} выдохнуть.`;
+  B.tfg1.meant = () => `Я ${w('fire','готов','готова')} к разговору и не тороплю тебя.`;
+  B.tfg2.self = () => `Я ${w('fire','попросил','попросила')} о том, что мне нужно.`;
+  B.ti4.self = () => `Я же ${w('ice','сказал','сказала')}, что ничего страшного.`;
+  B.tig2.meant = () => `Я не ${w('ice','хотел','хотела')} тебя напугать.`;
+  B.tii1.label = () => `«Это не допрос, ${w('fire','ему','ей')} просто страшно»`;
+  B.tii1.say = () => `Это не допрос. ${w('fire','Ему','Ей')} просто страшно.`;
+})();
+const S2_THOUGHT = {
+  fire: st => st === 'peak' ? 'Это конец…' : st === 'tense' ? 'Что за «момент»?' : 'Можно дожить до вечера',
+  ice:  st => st === 'peak' ? 'Меня уже судят…' : st === 'tense' ? 'Из мухи делают слона' : 'Можно спокойно поговорить'
+};
+const S2_STORY = {
+  ice: {
+    trait: 'справляется сам',
+    story: () => `В субботу у друзей новоселье, и надо решить, едете ли вы вместе или ты помогаешь брату с переездом. Между встречами ты ${w('ice','написал','написала')}: «Вечером надо будет обсудить один момент» и ${w('ice','ушёл','ушла')} в работу. Для тебя это обычный бытовой вопрос, и разбирать его в переписке не хочется.`,
+    facts: [
+      () => 'День расписан по минутам, на переписку нет ни времени, ни сил.',
+      () => 'Ты хочешь спокойно обсудить всё вживую, без спешки.'
+    ],
+    tell: () => `${w('ice','Он','Она')} просто ${w('ice','хотел','хотела')} обсудить выходные: в субботу у друзей новоселье, а брату нужна помощь с переездом. ${w('ice','Написал','Написала')} между встречами и ${w('ice','ушёл','ушла')} в работу. Для Льда это был обычный бытовой вопрос.`,
+    tellFacts: [
+      () => 'День был расписан по минутам, на переписку не оставалось ни времени, ни сил.',
+      () => `${w('ice','Он хотел','Она хотела')} обсудить всё вживую и спокойно. Что это прозвучит как гроза, ${w('ice','он','она')} не ${w('ice','подумал','подумала')}.`
+    ]
+  },
+  fire: {
+    trait: 'черпает силы в близких',
+    story: () => `Обычный рабочий день. Посреди него приходит сообщение: «Вечером надо будет обсудить один момент». И больше ничего. Ты спрашиваешь, что случилось, а в ответ тишина.`,
+    facts: [
+      () => 'В голове уже крутится худшее: тебя бросают.',
+      () => 'До вечера ещё шесть часов, и сосредоточиться на работе не получается.'
+    ],
+    tell: () => `Для Огня это сообщение прозвучало как гром посреди дня. ${w('fire','Он','Она')} сразу ${w('fire','представил','представила')} худшее: расставание. Весь день ${w('fire','он','она')} ${w('fire','провёл','провела')} как на эшафоте в ожидании приговора.`,
+    tellFacts: [
+      () => `${w('fire','Он','Она')} почти не ${w('fire','мог','могла')} работать: мысли возвращались к телефону.`,
+      () => `Любое «потом» и молчание звучали для ${w('fire','него','неё')} как подтверждение худшего.`
+    ]
+  }
+};
+const S2_AGREE = [
+  {id:'b1', who:'ice', from:['tik'], text:'На тревожный вопрос отвечаю хотя бы коротко: серьёзное это или бытовое.'},
+  {id:'b2', who:'fire', from:['tfk'], text:'Если меня пугает недосказанность, прошу ясности, а не выпытываю подробности.'},
+  {id:'b3', who:'both', from:['tig1'], text:'Важный разговор назначаем на конкретное время и не растягиваем.'},
+  {id:'b4', who:'fire', from:['tfg1'], text:'Если договорились говорить вечером, я жду вечера и не тороплю.'},
+  {id:'b5', who:'ice', from:['tig2'], text:'Не пишу «надо поговорить» без темы, хотя бы одним словом.'},
+  {id:'b6', who:'fire', from:['tfi1','tfi2'], text:'«Надо поговорить» ещё не приговор: напоминаю себе это, прежде чем писать.'},
+  {id:'b7', who:'ice', from:['tii1','tii2'], text:'Помню: для партнёра неизвестность тяжелее любой новости.'},
+  {id:'b8', who:'fire', from:['tfg2'], text:'Прошу называть тему сразу, так мне спокойнее.'}
+];
+const S2_TRIG = {
+  fire: ['«надо поговорить»','неизвестность','«потом»','недосказанность','«прочитано»','тишина','«вечером узнаешь»','ожидание','игнор','загадки'],
+  ice:  ['допрос','«скажи сейчас»','драма','паника','оправдания','давление','звонки','трагедия','упрёки','спешка']
+};
+
+/* ---------- scenario registry ---------- */
+const SCENARIOS = {
+  s1: {id:'s1', title:'Сутки тишины', sub:'Сутки без связи, а потом «привет»',
+    actions:S1_ACTIONS, thought:S1_THOUGHT, story:S1_STORY, agree:S1_AGREE, trig:S1_TRIG,
+    finale:() => `<p>Огню дали понять, что ${w('fire','его','её')} не забыли и не вычеркнули из жизни.</p><p>Лёд ${w('ice','получил','получила')} возможность побыть наедине с собой без упрёков.</p><p>Оба добились гармонии в отношениях.</p>`},
+  s2: {id:'s2', title:'Анонс грозы', sub:'«Вечером надо обсудить один момент»',
+    actions:S2_ACTIONS, thought:S2_THOUGHT, story:S2_STORY, agree:S2_AGREE, trig:S2_TRIG,
+    finale:() => `<p>Огонь ${w('fire','узнал','узнала')}, что за «моментом» не стоит приговор, и спокойно ${w('fire','дожил','дожила')} до вечера.</p><p>Льду не пришлось оправдываться ещё до разговора.</p><p>Вечером они просто обсудили выходные.</p>`}
+};
+const BY_ID = {}; Object.values(SCENARIOS).forEach(s => Object.values(s.actions).flat().forEach(a => BY_ID[a.id] = a));
+let SCN = 's1', SCX = SCENARIOS.s1, ACTIONS, THOUGHT, STORY, AGREE, AG_BY, TRIG;
+try { const s = localStorage.getItem('drakony-scn'); if (SCENARIOS[s]) SCN = s; } catch(e){}
+function setScenario(id){
+  SCN = SCENARIOS[id] ? id : 's1'; SCX = SCENARIOS[SCN];
+  ACTIONS = SCX.actions; THOUGHT = SCX.thought; STORY = SCX.story; AGREE = SCX.agree; TRIG = SCX.trig;
+  AG_BY = {}; AGREE.forEach(a => AG_BY[a.id] = a);
+  document.querySelectorAll('.scnpill').forEach(p => p.textContent = SCX.title);
+}
+setScenario(SCN);
 
 const INK = '#2b2f3a', SKIN = '#ffe2c9';
 function heroSVG(side, g, st){
@@ -708,13 +852,12 @@ function heroSVG(side, g, st){
 
 /* ---------- engine (pure, shared by bot and rooms) ---------- */
 const START = {fire:48, ice:38}, MAX_ROUNDS = 12, SIDES = ['fire','ice'];
-const ALL = Object.values(ACTIONS).flat();
 const rnd = n => (Math.random()*n)|0;
 const arr = x => Array.isArray(x) ? x : (x && typeof x === 'object' ? Object.keys(x).sort((a,b)=>a-b).map(k=>x[k]) : []);
 const clamp = v => Math.max(0, Math.min(100, v));
 const shuffleIds = list => list.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1].id);
 function newGame(){
-  const tiles = {}; ALL.forEach(a => tiles[a.id] = TILES[rnd(TILES.length)]);
+  const tiles = {}; Object.values(ACTIONS).flat().forEach(a => tiles[a.id] = TILES[rnd(TILES.length)]);
   return {round:1, lvl:{...START}, key:{fire:false, ice:false}, used:{fire:[], ice:[]},
     order:{fire:shuffleIds(ACTIONS.fire), ice:shuffleIds(ACTIONS.ice)}, tiles, picks:{}, history:[], last:null, done:false, outcome:''};
 }
@@ -835,7 +978,11 @@ function renderHome(){
     $('pick-'+side).classList.toggle('sel', ME === side);
     for (const g of ['m','f']) $(`g-${side}-${g}`).setAttribute('aria-pressed', String(G[side] === g));
   }
+  document.querySelectorAll('[data-scn]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.scn === SCN)));
 }
+document.querySelectorAll('[data-scn]').forEach(b => b.addEventListener('click', () => {
+  setScenario(b.dataset.scn); try { localStorage.setItem('drakony-scn', SCN); } catch(e){} renderHome();
+}));
 document.querySelectorAll('[data-role]').forEach(b => b.addEventListener('click', () => { ME = b.dataset.role; savePrefs(); renderHome(); }));
 document.querySelectorAll('#home .seg button').forEach(b => b.addEventListener('click', () => { G[b.dataset.side] = b.dataset.g; savePrefs(); renderHome(); }));
 
@@ -863,7 +1010,7 @@ async function createRoom(){
   try {
     let code, ref;
     for (let i=0;i<5;i++){ code = genCode(); ref = db().ref('rooms/'+code); const s = await ref.get(); if (!s.exists()) break; }
-    await ref.set({created:TS(), phase:'lobby', genders:{fire:G.fire, ice:G.ice}, players:{[ME]:Object.assign({id:PID, online:true}, QRES ? {quiz:QRES.fire} : {})}, ready:{fire:false, ice:false}, game:newGame()});
+    await ref.set({created:TS(), scn:SCN, phase:'lobby', genders:{fire:G.fire, ice:G.ice}, players:{[ME]:Object.assign({id:PID, online:true}, QRES ? {quiz:QRES.fire} : {})}, ready:{fire:false, ice:false}, game:newGame()});
     location.hash = code;
   } catch(e){ homeErr('Не получилось создать комнату: ' + e.message); }
 }
@@ -878,6 +1025,7 @@ function onRoom(r){
   if (App.mode !== 'room') return;
   if (!r){ const c = App.code, del = App.deleted; App.deleted = false; const wasDone = App.game && App.game.done; leave(true); history.replaceState(null, '', location.pathname); showScreen('home'); renderHome(); homeErr(del ? 'Комната и записи удалены.' : wasDone ? 'Партнёр удалил комнату и записи.' : `Комната ${c} не найдена или уже закрыта.`); return; }
   App.room = r;
+  if ((r.scn || 's1') !== SCN) setScenario(r.scn || 's1');
   if (r.genders) G = {fire:r.genders.fire || 'm', ice:r.genders.ice || 'f'};
   const pl = r.players || {};
   const mine = SIDES.find(s => pl[s] && pl[s].id === PID);
@@ -986,26 +1134,39 @@ function onGame(g){
 }
 function playReveal(last){
   App.animating = true; V = {...last.before}; renderAll();
-  const step = reduce ? 1200 : 3300;
-  last.events.forEach((ev, i) => later(() => visualEvent(ev), 300 + i*step));
+  let t = 300;
+  last.events.forEach(ev => { const at = t; later(() => visualEvent(ev), at); t += evPlan(ev).total; });
   later(() => {
     V = {...last.after}; App.animating = false; renderAll();
     if (App.game && App.game.done) showEnd(); else scheduleBot();
-  }, 300 + last.events.length*step + 400);
+  }, t + 200);
+}
+/* one bubble at a time: first the words, then one thought (mine, or how I heard the partner) */
+const readMs = s => Math.max(2100, Math.min(4200, 1300 + String(s).length*48));
+function evPlan(ev){
+  const a = BY_ID[ev.id], side = ev.side, other = OTHER[side];
+  const sayText = a.think && side !== ME ? '…' : a.say();
+  const sayDur = sayText === '…' ? 1500 : readMs(sayText);
+  let th = null;
+  if (side === ME && a.self) th = {side, text:a.self()};
+  else if (other === ME && a.feel && a.kind !== 'inner') th = {side:other, text:a.feel()};
+  if (th) th.dur = readMs(th.text);
+  return {a, side, other, sayText, sayDur, th, total: sayDur + (th ? 250 + th.dur : 0) + 450};
 }
 const TAGS = {bad:'Дракон взял верх', trap:'Ловушка', key:'Справился со своим драконом', good:'Поддержал', inner:'Усмирил дракона'};
 function visualEvent(ev){
-  const a = BY_ID[ev.id], side = ev.side, other = OTHER[side];
+  const P = evPlan(ev), {a, side, other} = P;
   const col = s => s === 'fire' ? '#ff9b6b' : '#7fdcff';
   const num = v => (v > 0 ? '+' : '−') + Math.abs(v);
-  bubble(side, a.think && side !== ME ? '…' : a.say(), a.think);
+  hideBubbles();
+  bubble(side, P.sayText, a.think, P.sayDur);
   setReactText(ev.kind || a.kind, `${NAME[side]} · ${TAGS[a.kind]}`, (ev.relapse ? 'Срыв. ' : '') + a.why());
-  if (side === ME && a.self) later(() => bubble(side, a.self(), true), 2100);
-  const feel = () => { if (other === ME && a.feel) bubble(other, a.feel(), true); };
+  if (P.th) later(() => { hideBubbles(); bubble(P.th.side, P.th.text, true, P.th.dur); }, P.sayDur + 250);
+  const feel = () => {};
   const bump = (s, v, c) => { if (!v) return; V[s] = clamp(V[s] + v); floatNum(s, num(v), c || (v > 0 ? col(s) : '#6ff0ae')); drawStatus(); };
   if (a.kind === 'bad' || a.kind === 'trap'){
     bump(side, ev.self); pulse[side] = 1; lunge[side] = 1; animHero(side, 'flinch');
-    shoot(side, other, 'feed', () => { bump(other, ev.other); animHero(other, 'flinch'); feel(); popTags(other, a.kind === 'bad' ? 3 : 2); }, true);
+    shoot(side, other, 'feed', () => { bump(other, ev.other); animHero(other, 'flinch'); feel(); popTags(other, a.kind === 'bad' ? 3 : 2, P.sayDur - 900); }, true);
   } else if (a.kind === 'key'){
     tame[side] = 1; bump(side, ev.self); animHero(side, 'relief');
     later(() => { bump(other, ev.other); animHero(other, 'relief'); feel(); }, 650);
@@ -1098,7 +1259,7 @@ function renderReactIdle(){
   const g = App.game;
   if (g.done && journalRound()) setReactText('inner', g.outcome === 'win' ? 'Победа' : 'Конец игры', 'Запишите, что вы почувствовали в последнем раунде.');
   else if (g.done) setReactText(g.outcome === 'win' ? 'good' : 'bad', g.outcome === 'win' ? 'Победа' : 'Конец игры', 'Разбор раундов ниже.');
-  else if (!phaseOpen()) setReactText('info', 'Сутки тишины', 'Прочитайте свою историю и нажмите «Готов».');
+  else if (!phaseOpen()) setReactText('info', SCX.title, 'Прочитайте свою историю и нажмите «Готов».');
   else if (journalRound()) setReactText('inner', `Раунд ${g.last.round} позади`, 'Запишите, что вы почувствовали.');
   else if (g.picks[ME]) setReactText('info', 'Ход выбран', App.mode === 'bot' ? 'Ждём, пока бот выберет свой.' : 'Ждём ход партнёра.');
   else setReactText('info', `Раунд ${g.round}`, 'Выберите ход вашего героя.');
@@ -1114,7 +1275,7 @@ function showEnd(){
   FINALE_WIN = g.outcome === 'win';
   $('finTitle').textContent = FINALE_WIN ? 'Драконы уснули' : 'Драконы не уснули';
   $('finText').innerHTML = FINALE_WIN
-    ? '<p>Огню дали понять, что его не забыли и не вычеркнули из жизни.</p><p>Лёд получил возможность побыть наедине с собой без упрёков.</p><p>Оба добились гармонии в отношениях.</p>'
+    ? SCX.finale()
     : `<p>За ${MAX_ROUNDS} раундов драконы так и не успокоились.</p><p>Посмотрите разбор ниже: там видно, что чувствовал каждый.</p>`;
   $('finale').hidden = false;
 }
@@ -1142,7 +1303,7 @@ function drawStatus(){
       const changed = !!curHero[side];
       $('hin-'+side).innerHTML = heroSVG(side, G[side], st);
       curHero[side] = key;
-      if (changed){ animHero(side, 'swap'); if (side === ME && performance.now() > busyUntil[side]) bubble(side, THOUGHT[side](st), true); }
+      if (changed){ animHero(side, 'swap'); if (side === ME && !App.animating && performance.now() > Math.max(busyUntil.fire, busyUntil.ice)) bubble(side, THOUGHT[side](st), true); }
     }
     const n = stateName(side);
     $('num-'+side).textContent = Math.round(V[side]);
@@ -1153,13 +1314,25 @@ function drawStatus(){
 }
 const HEAD = {fire:{x:250, y:82}, ice:{x:550, y:82}};
 const sayTimer = {}, busyUntil = {fire:0, ice:0};
-function bubble(side, text, think){
+function hudBottom(){ const h = $('hud-fire'); return h ? h.offsetTop + h.offsetHeight : 50; }
+function hideBubbles(){ for (const s of SIDES){ clearTimeout(sayTimer[s]); $('say-'+s).classList.add('off'); } }
+/* each side's bubble lives in its own half of the scene, so the two never cover each other */
+function bubble(side, text, think, dur){
+  dur = dur || readMs(text);
   const el = $('say-'+side), p = HEAD[side];
   el.textContent = text; el.classList.toggle('think', !!think);
-  el.style.left = (OX + p.x*SC) + 'px'; el.style.top = (OY + p.y*SC) + 'px';
+  const half = CW/2, cx = side === 'fire' ? half*0.5 : half*1.5;
+  el.style.maxWidth = Math.round(Math.min(half - 16, 300)) + 'px';
+  el.style.left = '0px'; el.style.top = '0px';
+  const w0 = el.offsetWidth, h0 = el.offsetHeight;
+  const hx = OX + p.x*SC, lo = side === 'fire' ? 8 : half + 8, hi = side === 'fire' ? half - 8 : CW - 8;
+  const x = Math.max(lo + w0/2, Math.min(hi - w0/2, (cx + hx)/2));
+  const bottom = Math.max(hudBottom() + 6 + h0, OY + (p.y - 14)*SC - (think ? 22 : 8));
+  el.style.left = x.toFixed(1) + 'px'; el.style.top = bottom.toFixed(1) + 'px';
+  el.style.setProperty('--tail', Math.max(14, Math.min(w0 - 14, hx - (x - w0/2))).toFixed(0) + 'px');
   el.classList.remove('off');
-  busyUntil[side] = performance.now() + 3800;
-  clearTimeout(sayTimer[side]); sayTimer[side] = setTimeout(() => el.classList.add('off'), 3800);
+  busyUntil[side] = performance.now() + dur;
+  clearTimeout(sayTimer[side]); sayTimer[side] = setTimeout(() => el.classList.add('off'), dur);
 }
 
 /* ---------- canvas loop ---------- */
@@ -1169,7 +1342,7 @@ let DPR = 1, CW = 0, CH = 0, SC = 1, OX = 0, OY = 0;
 function resize(){
   const r = cv.getBoundingClientRect(); DPR = Math.min(2, window.devicePixelRatio || 1);
   CW = r.width; CH = r.height; cv.width = bg.width = Math.round(CW*DPR); cv.height = bg.height = Math.round(CH*DPR);
-  SC = Math.min(CW/800, CH/340); OX = (CW - 800*SC)/2; OY = (CH - 340*SC)/2;
+  const band = Math.max(70, Math.min(150, CH*0.3)); SC = Math.min(CW/800, (CH - band)/340, CH/340); OX = (CW - 800*SC)/2; OY = CH - 340*SC;
 }
 new ResizeObserver(resize).observe(cv);
 
@@ -1482,17 +1655,6 @@ function renderFlow(){
 }
 
 /* ---------- agreements card ---------- */
-const AGREE = [
-  {id:'a1', who:'ice', from:['ig2'], text:'Если мне нужна тишина, я напишу одно слово и вернусь.'},
-  {id:'a2', who:'fire', from:['fk'], text:'Если мне тревожно, я скажу об этом прямо, без упрёков.'},
-  {id:'a3', who:'fire', from:['fg1'], text:'Пока ты в тишине, я не засыпаю тебя сообщениями: одно «я рядом» и жду.'},
-  {id:'a4', who:'ice', from:['ik'], text:'Когда вернусь, коротко объясню, что было, а не просто «всё норм».'},
-  {id:'a5', who:'both', from:['ig1'], text:'Сложные разговоры переносим на вечер, когда у обоих есть силы.'},
-  {id:'a6', who:'fire', from:['fi1','fi2'], text:'Когда накрывает тревога, сначала напоминаю себе: молчание ещё не отказ.'},
-  {id:'a7', who:'ice', from:['ii1','ii2'], text:'Перед резким ответом делаю паузу.'},
-  {id:'a8', who:'fire', from:['fg2'], text:'Мне достаточно короткого сигнала, подробности могут подождать.'}
-];
-const AG_BY = {}; AGREE.forEach(a => AG_BY[a.id] = a);
 const AG = {sig:'', own:[]};
 const whoTag = a => a.who === 'both' ? 'для обоих' : a.who === 'fire' ? 'Огонь' : 'Лёд';
 function agreeOf(side){
@@ -1557,7 +1719,7 @@ function renderAgree(){
       <div class="atop"><span class="tile t-or">${IC.flame}</span><span class="tile t-bl">${IC.snow}</span><span class="adate">${new Date().toLocaleDateString('ru-RU', {day:'numeric', month:'long', year:'numeric'})}</span></div>
       <h3 class="atitle">${title}</h3>
       ${L.agreed.length ? `<ol class="alist">${li(L.agreed)}</ol>` : `<p class="muted">Пока ни одной общей договорённости.${L.fromThem.length ? ' Посмотрите, что предложил партнёр.' : ''}</p>`}
-      <p class="asub">Огонь и Лёд · сценарий «Сутки тишины»</p>
+      <p class="asub">Огонь и Лёд · сценарий «${SCX.title}»</p>
     </div>
     ${L.fromThem.length ? `<div class="apend"><h4>${NAME[other]} предлагает</h4>${L.fromThem.map(k => `<div class="aprop"><span>${esc(itemText(k))}</span><button class="btn" type="button" data-accept="${esc(k)}">Принять</button></div>`).join('')}</div>` : ''}
     ${L.fromMe.length ? `<div class="apend"><h4>Ждут ответа ${other==='fire'?'Огня':'Льда'}</h4>${L.fromMe.map(k => `<div class="aprop dim"><span>${esc(itemText(k))}</span></div>`).join('')}</div>` : ''}
@@ -1624,7 +1786,7 @@ function saveAgreeImage(){
     lines.forEach((ln, j) => c.fillText(ln, P + 70, y + j*56));
     y += lines.length*56 + 36;
   });
-  c.fillStyle = '#9aa1ae'; c.font = '500 28px Inter, sans-serif'; c.fillText('Огонь и Лёд · «Драконы» · сценарий «Сутки тишины»', P, H - 70);
+  c.fillStyle = '#9aa1ae'; c.font = '500 28px Inter, sans-serif'; c.fillText(`Огонь и Лёд · «Драконы» · сценарий «${SCX.title}»`, P, H - 70);
   const a = document.createElement('a'); a.download = 'dogovorennosti.png'; a.href = cv2.toDataURL('image/png');
   document.body.appendChild(a); a.click(); a.remove();
   const m = $('agMsg'); m.textContent = 'Картинка сохранена в загрузки.'; m.hidden = false;
@@ -1641,29 +1803,32 @@ $('about').addEventListener('click', e => { if (e.target.id === 'about') closeAb
 addEventListener('keydown', e => { if (e.key === 'Escape' && !$('about').hidden) closeAbout(); });
 
 /* ---------- trigger tags (glass word cloud) ---------- */
-const TRIG = {
-  fire: ['молчание','«прочитано»','тишина','игнор','холод','дистанция','неизвестность','«потом»','«всё норм»','отмена планов'],
-  ice:  ['давление','допрос','упрёки','«надо поговорить»','контроль','звонки','«где ты?»','обиды','срочность','отчёт']
-};
 const shuffled = a => a.map(v => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map(x => x[1]);
-function popTags(side, n){
+/* chips fly out of the head into free sky slots of the hero's own half */
+const TSLOTS = [[.2,.3],[.7,.18],[.45,.62],[.88,.5],[.12,.72]];
+function popTags(side, n, life){
   if (reduce) n = Math.min(n, 2);
+  life = Math.max(1400, life || 2200);
   const layer = $('tagsGame'); if (!layer) return;
-  const p = HEAD[side], hx = OX + p.x*SC, hy = OY + (p.y + 55)*SC, R = Math.max(80, 125*SC);
-  const words = shuffled(TRIG[side]).slice(0, n);
-  const base = side === 'fire' ? -0.55 : -Math.PI + 0.55;
+  const p = HEAD[side], hx = OX + p.x*SC, hy = OY + p.y*SC, half = CW/2, x0 = side === 'fire' ? 0 : half;
+  const sky = Math.max(60, hy - 6);
+  const words = shuffled(TRIG[side]).slice(0, n), slots = shuffled(TSLOTS).slice(0, n);
   words.forEach((wd, i) => {
-    const a = base + (side === 'fire' ? 1 : -1)*(i - (n - 1)/2)*0.85 + (Math.random() - .5)*0.25;
     const el = document.createElement('span');
     el.className = 'tchip pop ' + side;
     el.textContent = wd;
-    el.style.left = hx + 'px'; el.style.top = hy + 'px';
-    el.style.setProperty('--x', (Math.cos(a)*R).toFixed(0) + 'px');
-    el.style.setProperty('--y', Math.max(26 - hy, Math.sin(a)*R*0.6 - 14).toFixed(0) + 'px');
-    el.style.setProperty('--ry', ((side === 'fire' ? 1 : -1)*(10 + Math.random()*16)).toFixed(0) + 'deg');
-    el.style.animationDelay = (i*0.22).toFixed(2) + 's';
     layer.appendChild(el);
-    setTimeout(() => el.remove(), 3400 + i*220);
+    const w0 = el.offsetWidth, [fx, fy] = slots[i];
+    const fxs = side === 'fire' ? fx : 1 - fx;
+    const tx = Math.max(x0 + w0/2 + 16, Math.min(x0 + half - w0/2 - 16, x0 + fxs*half));
+    const top = hudBottom() + 16, ty = top + fy*Math.max(30, sky - top);
+    el.style.left = hx + 'px'; el.style.top = (hy + 20*SC) + 'px';
+    el.style.setProperty('--x', (tx - hx).toFixed(0) + 'px');
+    el.style.setProperty('--y', (ty - hy - 20*SC).toFixed(0) + 'px');
+    el.style.setProperty('--ry', ((side === 'fire' ? 1 : -1)*(10 + Math.random()*16)).toFixed(0) + 'deg');
+    el.style.animationDelay = (i*0.18).toFixed(2) + 's';
+    el.style.animationDuration = (life/1000).toFixed(2) + 's';
+    setTimeout(() => el.remove(), life + i*180 + 100);
   });
 }
 /* landing clouds */
@@ -1671,7 +1836,7 @@ const LTAG = {fire:null, ice:null, shown:{fire:false, ice:false}};
 function buildLandingTags(){
   for (const side of SIDES){
     const box = $('lt-'+side); box.innerHTML = '';
-    const words = TRIG[side].slice(0, 8);
+    const words = S1_TRIG[side].slice(0, 8);
     const angs = side === 'fire' ? [-160,-125,-90,-55,-20,15,40,165] : [-20,-55,-90,-125,-160,165,140,15];
     words.forEach((wd, i) => {
       const a = angs[i]*Math.PI/180;
