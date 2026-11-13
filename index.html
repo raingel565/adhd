@@ -830,10 +830,10 @@ const S2_TRIG = {
 
 /* ---------- scenario registry ---------- */
 const SCENARIOS = {
-  s1: {id:'s1', title:'Сутки тишины', sub:'Сутки без связи, а потом «привет»',
+  s1: {id:'s1', title:'Сутки тишины', sub:'Сутки без связи, а потом «привет»', opener:{side:'ice', text:() => 'Привет'},
     actions:S1_ACTIONS, thought:S1_THOUGHT, story:S1_STORY, agree:S1_AGREE, trig:S1_TRIG,
     finale:() => `<p>Огню дали понять, что ${w('fire','его','её')} не забыли и не вычеркнули из жизни.</p><p>Лёд ${w('ice','получил','получила')} возможность побыть наедине с собой без упрёков.</p><p>Оба добились гармонии в отношениях.</p>`},
-  s2: {id:'s2', title:'Анонс грозы', sub:'«Вечером надо обсудить один момент»',
+  s2: {id:'s2', title:'Анонс грозы', sub:'«Вечером надо обсудить один момент»', opener:{side:'ice', text:() => 'Вечером надо будет обсудить один момент'},
     actions:S2_ACTIONS, thought:S2_THOUGHT, story:S2_STORY, agree:S2_AGREE, trig:S2_TRIG,
     finale:() => `<p>Огонь ${w('fire','узнал','узнала')}, что за «моментом» не стоит приговор, и спокойно ${w('fire','дожил','дожила')} до вечера.</p><p>Льду не пришлось оправдываться ещё до разговора.</p><p>Вечером они просто обсудили выходные.</p>`}
 };
@@ -897,7 +897,8 @@ const shuffleIds = list => list.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0])
 function newGame(){
   const tiles = {}; Object.values(ACTIONS).flat().forEach(a => tiles[a.id] = TILES[rnd(TILES.length)]);
   return {round:1, lvl:{...START}, key:{fire:false, ice:false}, used:{fire:[], ice:[]},
-    order:{fire:shuffleIds(ACTIONS.fire), ice:shuffleIds(ACTIONS.ice)}, tiles, picks:{}, history:[], last:null, done:false, outcome:'', boil:''};
+    order:{fire:shuffleIds(ACTIONS.fire), ice:shuffleIds(ACTIONS.ice)}, tiles, picks:{}, history:[], last:null, done:false, outcome:'', boil:'',
+    turn:OTHER[SCX.opener.side], half:0, seq:0, jr:0};
 }
 function norm(g){
   if (!g) return null;
@@ -908,7 +909,8 @@ function norm(g){
   g.picks = g.picks || {};
   g.tiles = g.tiles || {};
   g.history = arr(g.history).map(h => ({round:h.round, events:arr(h.events)}));
-  g.last = g.last ? {round:g.last.round, before:g.last.before, after:g.last.after, events:arr(g.last.events)} : null;
+  g.last = g.last ? {seq:g.last.seq || 0, round:g.last.round, full:!!g.last.full, before:g.last.before, after:g.last.after, events:arr(g.last.events)} : null;
+  g.turn = g.turn || 'fire'; g.half = g.half || 0; g.seq = g.seq || 0; g.jr = g.jr || 0;
   g.done = !!g.done; g.outcome = g.outcome || ''; g.boil = g.boil || '';
   return g;
 }
@@ -927,29 +929,34 @@ function applyAction(g, side, id){
   g.lvl[other] = clamp(g.lvl[other] + ev.other);
   return ev;
 }
-function resolve(g){
-  const pf = g.picks.fire, pi = g.picks.ice;
-  if (!pf || !pi || g.done) return false;
-  const order = (pf.t || 0) <= (pi.t || 0) ? ['fire','ice'] : ['ice','fire'];
-  const before = {...g.lvl};
-  /* boiling point: the first dragon to reach 100 breaks loose and the game ends */
-  let boil = '';
-  const events = order.map(s => {
-    const ev = applyAction(g, s, g.picks[s].id), o = s === 'fire' ? 'ice' : 'fire';
-    if (!boil) boil = g.lvl[o] >= BOIL ? o : g.lvl[s] >= BOIL ? s : '';
-    return ev;
-  });
-  for (const s of SIDES){
-    let d = 0; if (!g.key[s==='fire'?'ice':'fire']) d += 3; if (g.key[s]) d -= 5;
-    g.lvl[s] = clamp(g.lvl[s] + d);
+/* turns alternate like a real chat: one line, then the partner answers it.
+   A round is that pair; between rounds the dragons drift. */
+function play(g, side, id){
+  if (g.done || g.turn !== side || !BY_ID[id]) return false;
+  const before = {...g.lvl}, other = OTHER[side];
+  const ev = applyAction(g, side, id);
+  let boil = g.lvl[other] >= BOIL ? other : g.lvl[side] >= BOIL ? side : '';
+  const full = g.half === 1;
+  if (full && !boil){
+    for (const s of SIDES){
+      let d = 0; if (!g.key[OTHER[s]]) d += 3; if (g.key[s]) d -= 5;
+      g.lvl[s] = clamp(g.lvl[s] + d);
+    }
+    if (Math.max(g.lvl.fire, g.lvl.ice) >= BOIL) boil = g.lvl.fire >= g.lvl.ice ? 'fire' : 'ice';
   }
-  if (!boil && Math.max(g.lvl.fire, g.lvl.ice) >= BOIL) boil = g.lvl.fire >= g.lvl.ice ? 'fire' : 'ice';
-  if (boil){ g.done = true; g.outcome = 'boil'; g.boil = boil; }
-  else if (g.key.fire && g.key.ice && g.lvl.fire < 12 && g.lvl.ice < 12){ g.done = true; g.outcome = 'win'; g.lvl = {fire:0, ice:0}; }
-  else if (g.round >= MAX_ROUNDS){ g.done = true; g.outcome = 'lose'; }
-  g.last = {round:g.round, before, after:{...g.lvl}, events};
-  g.history.push({round:g.round, events});
-  g.round++; g.picks = {};
+  let h = g.history.find(x => x.round === g.round);
+  if (!h){ h = {round:g.round, events:[]}; g.history.push(h); }
+  h.events.push(ev);
+  g.seq++;
+  if (boil){ g.done = true; g.outcome = 'boil'; g.boil = boil; g.jr = g.round; }
+  else if (full){
+    g.jr = g.round;
+    if (g.key.fire && g.key.ice && g.lvl.fire < 12 && g.lvl.ice < 12){ g.done = true; g.outcome = 'win'; g.lvl = {fire:0, ice:0}; }
+    else if (g.round >= MAX_ROUNDS){ g.done = true; g.outcome = 'lose'; }
+  }
+  g.last = {seq:g.seq, round:g.round, full:full || !!boil, before, after:{...g.lvl}, events:[ev]};
+  if (full && !g.done){ g.round++; g.half = 0; } else if (!full) g.half = 1;
+  g.turn = other; g.picks = {};
   return true;
 }
 function botPick(g, side){
@@ -1039,16 +1046,16 @@ function startBot(){
   V = {...App.local.lvl}; resetScene(); showScreen('game'); onGame(clone(App.local));
 }
 function scheduleBot(){
-  if (App.mode !== 'bot' || !App.introDone) return;
+  if (App.mode !== 'bot' || !App.introDone || App.botT || App.animating) return;
   const g = App.local, bot = OTHER[ME];
-  if (g.done || g.picks[bot]) return;
-  later(() => {
-    if (App.mode !== 'bot' || g !== App.local || g.picks[bot] || g.done) return;
-    g.picks[bot] = {id:botPick(g, bot), t:Date.now()};
-    localResolve();
-  }, 1400 + Math.random()*1800);
+  if (!g || g.done || g.turn !== bot || journalRound()) return;
+  App.botT = later(() => {
+    App.botT = 0;
+    if (App.mode !== 'bot' || g !== App.local || g.done || g.turn !== bot) return;
+    localPlay(bot, botPick(g, bot));
+  }, 1200 + Math.random()*1200);
 }
-function localResolve(){ const g = App.local; if (g.picks.fire && g.picks.ice) resolve(g); onGame(clone(g)); }
+function localPlay(side, id){ play(App.local, side, id); onGame(clone(App.local)); }
 
 /* ---------- rooms ---------- */
 function genCode(){ const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let c = ''; for (let i=0;i<4;i++) c += A[rnd(A.length)]; return c; }
@@ -1084,7 +1091,7 @@ function onRoom(r){
   if (ME !== mine || !App.presence){ ME = mine; setupPresence(); }
   if (r.phase === 'lobby'){ showLobby(); return; }
   if (App.screen !== 'game'){ showScreen('game'); }
-  if (App.lastPlayed === -1){ const g = norm(clone(r.game)); App.lastPlayed = g.last ? g.last.round : 0; V = {...g.lvl}; resetScene(); }
+  if (App.lastPlayed === -1){ const g = norm(clone(r.game)); App.lastPlayed = g.last ? g.last.seq : 0; V = {...g.lvl}; resetScene(); }
   onGame(clone(r.game));
 }
 function setupPresence(){
@@ -1136,7 +1143,7 @@ function selectLink(){ const r = document.createRange(); r.selectNodeContents($(
 
 /* ---------- leaving ---------- */
 function leave(gone){
-  App.timers.forEach(clearTimeout); App.timers = [];
+  App.timers.forEach(clearTimeout); App.timers = []; App.botT = 0; App.pending = false;
   if (App.ref){
     App.ref.off();
     if (App.presence){ App.presence.conn.off('value', App.presence.h); App.presence.pref.onDisconnect().cancel(); if (!gone) App.presence.pref.set(false).catch(()=>{}); }
@@ -1155,27 +1162,27 @@ function phaseOpen(){
   if (!App.game || App.game.done) return false;
   return App.mode === 'bot' ? App.introDone : (App.room && App.room.phase === 'play');
 }
-function canPick(){ return phaseOpen() && !App.animating && !journalRound() && !(App.game.picks && App.game.picks[ME]); }
+function canPick(){ return phaseOpen() && !App.animating && !App.pending && !journalRound() && App.game.turn === ME; }
 function choose(id){
   if (!canPick()) return;
+  hideBubbles();
   if (App.mode === 'bot'){
-    App.local.picks[ME] = {id, t:Date.now()}; localResolve();
+    localPlay(ME, id);
   } else {
-    App.game.picks[ME] = {id, t:0}; renderAll();
-    App.ref.child('game/picks/'+ME).set({id, t:TS()})
-      .then(() => App.ref.child('game').transaction(g => {
-        if (!g) return g;
-        g = norm(g);
-        if (g.done || !(g.picks.fire && g.picks.ice)) return;
-        resolve(g); return g;
-      }))
-      .catch(e => setReactText('info', 'Ошибка сети', e.message));
+    App.pending = true; renderAll();
+    App.ref.child('game').transaction(g => {
+      if (!g) return g;
+      g = norm(g);
+      if (g.done || g.turn !== ME) return;
+      play(g, ME, id); return g;
+    }).then(r => { if (!r.committed){ App.pending = false; renderAll(); } })
+      .catch(e => { App.pending = false; renderAll(); setReactText('info', 'Ошибка сети', e.message); });
   }
 }
 function onGame(g){
-  g = norm(g); App.game = g;
+  g = norm(g); App.game = g; App.pending = false;
   if (!g.last && App.lastPlayed > 0){ App.lastPlayed = 0; V = {...g.lvl}; resetScene(); App.introDone = false; App.tab = 'main'; }
-  if (g.last && g.last.round > App.lastPlayed){ App.lastPlayed = g.last.round; playReveal(g.last); }
+  if (g.last && g.last.seq > App.lastPlayed){ App.lastPlayed = g.last.seq; playReveal(g.last); }
   else if (!App.animating){ V = {...g.lvl}; if (g.done) showEnd(); }
   renderAll();
 }
@@ -1240,7 +1247,8 @@ function renderIntro(){
   $('introRole').textContent = `Ты ${NAME[ME]} · ${st.trait}`;
   $('introStory').textContent = st.story();
   $('introFacts').innerHTML = st.facts.map(f => `<li>${esc(f())}</li>`).join('');
-  $('introNow').textContent = `Что происходит у ${NAME[OTHER[ME]] === 'Лёд' ? 'Льда' : 'Огня'}, ты не знаешь. Это откроется в разборе.${App.mode === 'bot' ? ' За второго героя играет бот.' : ''} ${quizLine()}`;
+  const first = OTHER[SCX.opener.side], who = first === ME ? `Ты отвечаешь ${w(ME,'первым','первой')}, дальше ходите по очереди.` : `${NAME[first]} отвечает ${w(first,'первым','первой')}, дальше ходите по очереди.`;
+  $('introNow').textContent = `${who} Что происходит у ${NAME[OTHER[ME]] === 'Лёд' ? 'Льда' : 'Огня'}, ты не знаешь. Это откроется в разборе.${App.mode === 'bot' ? ' За второго героя играет бот.' : ''} ${quizLine()}`;
   const iAmReady = App.mode === 'room' && App.room.ready && App.room.ready[ME];
   $('go').hidden = !!iAmReady; $('introWait').hidden = !iAmReady;
 }
@@ -1270,7 +1278,7 @@ function renderPanel(){
   const list = tab === 'main' ? g.order[side].map(id=>BY_ID[id]) : tab === 'good' ? ACTIONS[side+'Good'] : ACTIONS[side+'Inner'];
   const el = $('panel'), my = canPick();
   el.className = 'panel glass ' + side + (my ? ' myturn' : '');
-  const badge = g.done ? '' : my ? '<span class="tbadge on">Твой ход</span>' : g.picks && g.picks[ME] && !App.animating ? '<span class="tbadge">Ход выбран</span>' : '';
+  const badge = g.done ? '' : my ? '<span class="tbadge on">Твой ход</span>' : g.turn !== ME && !App.animating ? '<span class="tbadge">Ход партнёра</span>' : '';
   el.innerHTML = `
     <div class="ph"><span class="tile ${side==='fire'?'t-or':'t-bl'}">${side==='fire'?IC.flame:IC.snow}</span><h3>${NAME[side]}</h3>${badge}<span class="trait">${side==='fire'?'Черпает силы в близких':'Справляется сам'}</span></div>
     <div class="tabs" role="tablist">
@@ -1289,19 +1297,19 @@ $('panel').addEventListener('click', e => {
 function renderPartner(){
   const g = App.game, other = OTHER[ME];
   let st, cls = '';
-  const pj = App.mode === 'room' && g.last && !(App.room.journal && App.room.journal[other] && App.room.journal[other]['r'+g.last.round]);
+  const pj = App.mode === 'room' && g.jr && !(App.room.journal && App.room.journal[other] && App.room.journal[other]['r'+g.jr]);
   if (g.done) st = App.mode === 'room' && !revealedOf(other) ? (pj ? 'Записывает чувства…' : 'Решает, что показать') : 'Игра окончена', cls = st === 'Игра окончена' ? '' : 'think';
   else if (App.animating) st = 'Раскрываем ходы';
   else if (App.mode === 'room' && App.room && App.room.players && App.room.players[other] && App.room.players[other].online === false){ st = 'Не в сети'; cls = 'off'; }
   else if (!phaseOpen()) st = 'Готовится';
-  else if (g.picks[other]){ st = 'Ход выбран'; cls = 'ok'; }
   else if (pj){ st = 'Записывает чувства…'; cls = 'think'; }
-  else { st = App.mode === 'bot' ? 'Бот думает…' : 'Выбирает ход…'; cls = 'think'; }
+  else if (g.turn === ME){ st = 'Ждёт твоего ответа'; cls = 'ok'; }
+  else { st = App.mode === 'bot' ? 'Бот отвечает…' : 'Пишет ответ…'; cls = 'think'; }
   $('partner').innerHTML = `
     <div class="ph"><span class="tile ${other==='fire'?'t-or':'t-bl'}">${other==='fire'?IC.flame:IC.snow}</span><h3>${NAME[other]}</h3><span class="trait">${App.mode==='bot'?'бот':'партнёр'}</span></div>
     <p class="pst ${cls}"><span class="dotp"></span>${st}</p>
     <p class="rnd">Раунд ${Math.min(g.round, MAX_ROUNDS)} из ${MAX_ROUNDS}</p>
-    <p class="hintp">Вы не видите, что выбрал партнёр, пока ходы не раскроются. Его записи о чувствах откроются в разборе.</p>`;
+    <p class="hintp">Ходите по очереди: партнёр видит твою реплику и отвечает на неё. Его записи о чувствах откроются в разборе.</p>`;
 }
 function setReactText(kind, tag, msg){
   const el = $('react');
@@ -1314,13 +1322,15 @@ function renderReactIdle(){
   if (g.done && journalRound()) setReactText('inner', g.outcome === 'win' ? 'Победа' : g.outcome === 'boil' ? 'Точка кипения' : 'Конец игры', 'Запишите, что вы почувствовали в последнем раунде.');
   else if (g.done) setReactText(g.outcome === 'win' ? 'good' : 'bad', g.outcome === 'win' ? 'Победа' : g.outcome === 'boil' ? 'Точка кипения' : 'Затишье', 'Разбор раундов ниже.');
   else if (!phaseOpen()) setReactText('info', SCX.title, 'Прочитайте свою историю и нажмите «Готов».');
-  else if (journalRound()) setReactText('inner', `Раунд ${g.last.round} позади`, 'Запишите, что вы почувствовали.');
-  else if (g.picks[ME]) setReactText('info', 'Ход выбран', App.mode === 'bot' ? 'Ждём, пока бот выберет свой.' : 'Ждём ход партнёра.');
-  else setReactText('info', `Раунд ${g.round}`, 'Выберите ход вашего героя.');
+  else if (journalRound()) setReactText('inner', `Раунд ${g.jr} позади`, 'Запишите, что вы почувствовали.');
+  else if (g.seq === 0 && g.turn === ME) setReactText('info', `${NAME[SCX.opener.side]} пишет`, `«${SCX.opener.text()}». Что ответишь?`);
+  else if (g.turn !== ME) setReactText('info', `Раунд ${g.round}`, App.mode === 'bot' ? 'Бот отвечает…' : `Ждём ответ ${GEN[OTHER[ME]]}.`);
+  else setReactText('info', `Раунд ${g.round}`, g.half === 1 ? 'Ответь на реплику партнёра.' : 'Твой ход.');
 }
 function renderAll(){
   if (!App.game) return;
   renderPanel(); renderPartner(); renderReactIdle(); renderTurnIdle(); renderIntro(); renderFlow(); drawStatus();
+  scheduleBot();
 }
 
 /* ---------- end + summary ---------- */
@@ -1393,17 +1403,32 @@ function setTurn(text, side, live){
 function setSpot(side){ const el = $('spot'); if (el) el.className = 'spot' + (side ? ' on ' + side : ''); }
 function renderTurnIdle(){
   if (App.animating) return;
+  showOpener();
   const g = App.game; setSpot(null);
   if (!g || g.done || !phaseOpen()) return setTurn('');
   if (journalRound()) return setTurn('Запишите, что почувствовали');
-  if (!g.picks[ME]){
+  if (g.turn === ME){
     const e = SIDES.filter(s => V[s] >= EDGE).sort((a,b) => V[b] - V[a])[0];
     return setTurn(e ? (CW < 560 ? `Твой ход · ${NAME[e]} на грани` : `Твой ход · дракон ${GEN[e]} на грани`) : 'Твой ход', e || ME, true);
   }
   setTurn(`Ждём ход ${GEN[OTHER[ME]]}…`, OTHER[ME]);
 }
 function hudBottom(){ const h = $('hud-fire'); return h ? h.offsetTop + h.offsetHeight : 50; }
-function hideBubbles(){ for (const s of SIDES){ clearTimeout(sayTimer[s]); $('say-'+s).classList.add('off'); } }
+function hideBubbles(){ for (const s of SIDES){ clearTimeout(sayTimer[s]); $('say-'+s).classList.add('off'); busyUntil[s] = 0; } }
+/* the line you are answering stays on screen: the story's opening line, then the partner's last words */
+function showOpener(){
+  const g = App.game;
+  if (!g || g.done || App.animating || !CW) return;
+  let side, text;
+  if (!g.seq){ side = SCX.opener.side; text = SCX.opener.text(); }
+  else {
+    const ev = g.last && g.last.events[0], a = ev && BY_ID[ev.id];
+    if (!a || g.turn !== ME || ev.side === ME || a.think || journalRound()) return;
+    side = ev.side; text = a.say();
+  }
+  const el = $('say-'+side);
+  if (el.classList.contains('off') || el.textContent !== text) bubble(side, text, false, 864e5);
+}
 /* each side's bubble lives in its own half of the scene, so the two never cover each other */
 function bubble(side, text, think, dur){
   dur = dur || readMs(text);
@@ -1411,8 +1436,9 @@ function bubble(side, text, think, dur){
   el.textContent = text; el.classList.toggle('think', !!think);
   const half = CW/2, cx = side === 'fire' ? half*0.5 : half*1.5;
   el.style.maxWidth = Math.round(Math.min(half - 16, 300)) + 'px';
-  el.style.left = '0px'; el.style.top = '0px';
-  const w0 = el.offsetWidth, h0 = el.offsetHeight;
+  el.style.left = '0px'; el.style.top = '0px'; el.style.width = '';
+  const w0 = Math.ceil(el.getBoundingClientRect().width / (parseFloat(getComputedStyle(el).scale) || 1)) || el.offsetWidth, h0 = el.offsetHeight;
+  el.style.width = el.offsetWidth + 1 + 'px';
   const hx = OX + p.x*SC, lo = side === 'fire' ? 8 : half + 8, hi = side === 'fire' ? half - 8 : CW - 8;
   const x = Math.max(lo + w0/2, Math.min(hi - w0/2, (cx + hx)/2));
   const bottom = Math.max(hudBottom() + 6 + h0, OY + (p.y - 14)*SC - (think ? 22 : 8));
@@ -1537,9 +1563,9 @@ function revealedOf(side){
 }
 function journalRound(){
   const g = App.game;
-  if (!g || !g.last || App.animating) return 0;
+  if (!g || !g.jr || App.animating) return 0;
   if (App.mode === 'bot' ? !App.introDone : !(App.room && (App.room.phase === 'play'))) return 0;
-  return journalOf(ME)['r'+g.last.round] ? 0 : g.last.round;
+  return journalOf(ME)['r'+g.jr] ? 0 : g.jr;
 }
 function roundEvents(round){
   const g = App.game, h = g.history.find(x => x.round === round) || g.last;
