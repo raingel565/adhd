@@ -437,6 +437,17 @@ h1{margin:0; font-size:clamp(24px,3.4vw,32px); font-weight:800; letter-spacing:-
 @media (max-width:760px){ .turn{font-size:11.5px; line-height:1.2; padding:6px 10px; top:10px; white-space:normal; text-align:left; border-radius:14px; gap:6px} .ph .trait{display:none} }
 @media (prefers-reduced-motion: reduce){ .turn.live .tdot,.turn.bump{animation:none} }
 
+/* dragon on the edge / boiling point */
+.hud.edge{animation:hudEdge 1s ease-in-out infinite}
+.hud.fire.edge{box-shadow:0 0 0 1px rgba(255,110,70,.8), 0 0 22px rgba(255,80,40,.45)}
+.hud.ice.edge{box-shadow:0 0 0 1px rgba(150,220,255,.85), 0 0 22px rgba(110,200,255,.45)}
+.hud.edge .st{color:#fff; font-weight:700}
+@keyframes hudEdge{50%{transform:translateY(-1px) scale(1.03)}}
+.finale.boil.fire .card{border-color:rgba(255,120,80,.55); box-shadow:0 18px 50px rgba(0,0,0,.45), 0 0 40px rgba(255,80,40,.25)}
+.finale.boil.ice .card{border-color:rgba(160,225,255,.6); box-shadow:0 18px 50px rgba(0,0,0,.45), 0 0 40px rgba(120,210,255,.25)}
+.finale.boil.fire h2{color:#ffb08a} .finale.boil.ice h2{color:#bfe9ff}
+@media (prefers-reduced-motion: reduce){ .hud.edge{animation:none} }
+
 </style>
 </head>
 <body>
@@ -878,7 +889,7 @@ function heroSVG(side, g, st){
 
 
 /* ---------- engine (pure, shared by bot and rooms) ---------- */
-const START = {fire:48, ice:38}, MAX_ROUNDS = 12, SIDES = ['fire','ice'];
+const START = {fire:40, ice:32}, MAX_ROUNDS = 12, BOIL = 100, EDGE = 85, SIDES = ['fire','ice'];
 const rnd = n => (Math.random()*n)|0;
 const arr = x => Array.isArray(x) ? x : (x && typeof x === 'object' ? Object.keys(x).sort((a,b)=>a-b).map(k=>x[k]) : []);
 const clamp = v => Math.max(0, Math.min(100, v));
@@ -886,7 +897,7 @@ const shuffleIds = list => list.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0])
 function newGame(){
   const tiles = {}; Object.values(ACTIONS).flat().forEach(a => tiles[a.id] = TILES[rnd(TILES.length)]);
   return {round:1, lvl:{...START}, key:{fire:false, ice:false}, used:{fire:[], ice:[]},
-    order:{fire:shuffleIds(ACTIONS.fire), ice:shuffleIds(ACTIONS.ice)}, tiles, picks:{}, history:[], last:null, done:false, outcome:''};
+    order:{fire:shuffleIds(ACTIONS.fire), ice:shuffleIds(ACTIONS.ice)}, tiles, picks:{}, history:[], last:null, done:false, outcome:'', boil:''};
 }
 function norm(g){
   if (!g) return null;
@@ -898,7 +909,7 @@ function norm(g){
   g.tiles = g.tiles || {};
   g.history = arr(g.history).map(h => ({round:h.round, events:arr(h.events)}));
   g.last = g.last ? {round:g.last.round, before:g.last.before, after:g.last.after, events:arr(g.last.events)} : null;
-  g.done = !!g.done; g.outcome = g.outcome || '';
+  g.done = !!g.done; g.outcome = g.outcome || ''; g.boil = g.boil || '';
   return g;
 }
 function applyAction(g, side, id){
@@ -906,7 +917,7 @@ function applyAction(g, side, id){
   const ev = {side, id, self:0, other:0, relapse:false};
   if (a.kind === 'bad' || a.kind === 'trap'){
     const m = g.key[side] ? 1.3 : 1;
-    ev.other = Math.round(a.d*m); ev.self = Math.round(a.d*0.5*m); ev.relapse = !!g.key[side];
+    ev.other = Math.round(a.d*0.6*m); ev.self = Math.round(a.d*0.3*m); ev.relapse = !!g.key[side];
   } else if (a.kind === 'key'){
     g.key[side] = true; ev.self = -16; ev.other = -8;
     if (!g.used[side].includes(id)) g.used[side].push(id);
@@ -921,12 +932,20 @@ function resolve(g){
   if (!pf || !pi || g.done) return false;
   const order = (pf.t || 0) <= (pi.t || 0) ? ['fire','ice'] : ['ice','fire'];
   const before = {...g.lvl};
-  const events = order.map(s => applyAction(g, s, g.picks[s].id));
+  /* boiling point: the first dragon to reach 100 breaks loose and the game ends */
+  let boil = '';
+  const events = order.map(s => {
+    const ev = applyAction(g, s, g.picks[s].id), o = s === 'fire' ? 'ice' : 'fire';
+    if (!boil) boil = g.lvl[o] >= BOIL ? o : g.lvl[s] >= BOIL ? s : '';
+    return ev;
+  });
   for (const s of SIDES){
     let d = 0; if (!g.key[s==='fire'?'ice':'fire']) d += 3; if (g.key[s]) d -= 5;
     g.lvl[s] = clamp(g.lvl[s] + d);
   }
-  if (g.key.fire && g.key.ice && g.lvl.fire < 12 && g.lvl.ice < 12){ g.done = true; g.outcome = 'win'; g.lvl = {fire:0, ice:0}; }
+  if (!boil && Math.max(g.lvl.fire, g.lvl.ice) >= BOIL) boil = g.lvl.fire >= g.lvl.ice ? 'fire' : 'ice';
+  if (boil){ g.done = true; g.outcome = 'boil'; g.boil = boil; }
+  else if (g.key.fire && g.key.ice && g.lvl.fire < 12 && g.lvl.ice < 12){ g.done = true; g.outcome = 'win'; g.lvl = {fire:0, ice:0}; }
   else if (g.round >= MAX_ROUNDS){ g.done = true; g.outcome = 'lose'; }
   g.last = {round:g.round, before, after:{...g.lvl}, events};
   g.history.push({round:g.round, events});
@@ -940,6 +959,7 @@ function botPick(g, side){
   const bads = main.filter(id => BY_ID[id].kind !== 'key');
   const goods = ACTIONS[side+'Good'].map(a=>a.id), inners = ACTIONS[side+'Inner'].map(a=>a.id);
   const pickR = l => l[rnd(l.length)];
+  if (g.lvl[side] >= EDGE && Math.random() < 0.5) return pickR(inners);
   if (!g.key[side]){
     const p = 0.12 + 0.14*(g.round - 1) + (g.key[other] ? 0.3 : 0);
     if (Math.random() < p) return key;
@@ -954,7 +974,7 @@ function botPick(g, side){
 const App = {journal:{}, deleted:false, mode:null, code:null, ref:null, room:null, game:null, local:null, animating:false, lastPlayed:0,
   introDone:false, tab:'main', timers:[], joinSide:null, presence:null, screen:'home'};
 let V = {...START};
-let FINALE_WIN = false;
+let FINALE_WIN = false, BOIL_SIDE = '', BOIL_T = 0;
 const later = (fn, ms) => { const t = setTimeout(fn, ms); App.timers.push(t); return t; };
 const clone = o => JSON.parse(JSON.stringify(o));
 let PID;
@@ -1122,12 +1142,12 @@ function leave(gone){
     if (App.presence){ App.presence.conn.off('value', App.presence.h); App.presence.pref.onDisconnect().cancel(); if (!gone) App.presence.pref.set(false).catch(()=>{}); }
   }
   App.ref = null; App.room = null; App.presence = null; App.game = null; App.local = null; App.mode = null; App.animating = false;
-  FINALE_WIN = false; $('finale').hidden = true; $('summary').hidden = true; $('journal').hidden = true; $('consent').hidden = true; $('agree').hidden = true; AG.sig = ''; JR.round = 0; SUM_SIG = '';
+  FINALE_WIN = false; BOIL_SIDE = ''; $('finale').hidden = true; $('summary').hidden = true; $('journal').hidden = true; $('consent').hidden = true; $('agree').hidden = true; AG.sig = ''; JR.round = 0; SUM_SIG = '';
 }
 function resetScene(){
   parts = []; shots = []; floats = []; curHero.fire = curHero.ice = '';
   for (const s of SIDES){ shown[s] = V[s]; pulse[s] = lunge[s] = tame[s] = 0; $('say-'+s).classList.add('off'); }
-  FINALE_WIN = false; $('finale').hidden = true; $('summary').hidden = true; $('journal').hidden = true; $('consent').hidden = true; $('agree').hidden = true; AG.sig = ''; JR.round = 0; SUM_SIG = '';
+  FINALE_WIN = false; BOIL_SIDE = ''; $('finale').hidden = true; $('summary').hidden = true; $('journal').hidden = true; $('consent').hidden = true; $('agree').hidden = true; AG.sig = ''; JR.round = 0; SUM_SIG = '';
 }
 
 /* ---------- game flow ---------- */
@@ -1291,8 +1311,8 @@ function setReactText(kind, tag, msg){
 function renderReactIdle(){
   if (App.animating) return;
   const g = App.game;
-  if (g.done && journalRound()) setReactText('inner', g.outcome === 'win' ? 'Победа' : 'Конец игры', 'Запишите, что вы почувствовали в последнем раунде.');
-  else if (g.done) setReactText(g.outcome === 'win' ? 'good' : 'bad', g.outcome === 'win' ? 'Победа' : 'Конец игры', 'Разбор раундов ниже.');
+  if (g.done && journalRound()) setReactText('inner', g.outcome === 'win' ? 'Победа' : g.outcome === 'boil' ? 'Точка кипения' : 'Конец игры', 'Запишите, что вы почувствовали в последнем раунде.');
+  else if (g.done) setReactText(g.outcome === 'win' ? 'good' : 'bad', g.outcome === 'win' ? 'Победа' : g.outcome === 'boil' ? 'Точка кипения' : 'Затишье', 'Разбор раундов ниже.');
   else if (!phaseOpen()) setReactText('info', SCX.title, 'Прочитайте свою историю и нажмите «Готов».');
   else if (journalRound()) setReactText('inner', `Раунд ${g.last.round} позади`, 'Запишите, что вы почувствовали.');
   else if (g.picks[ME]) setReactText('info', 'Ход выбран', App.mode === 'bot' ? 'Ждём, пока бот выберет свой.' : 'Ждём ход партнёра.');
@@ -1304,14 +1324,23 @@ function renderAll(){
 }
 
 /* ---------- end + summary ---------- */
+const END_TEXT = {
+  win: () => ['Драконы уснули', SCX.finale()],
+  boil_fire: () => ['Дракон Огня вырвался', `<p>Тревога дошла до предела. Огонь ${w('fire','сорвался','сорвалась')}: упрёки, ультиматум, «раз так, не звони мне больше».</p><p>В разборе видно, какие ходы кормили дракона Огня и что могло его успокоить.</p>`],
+  boil_ice: () => ['Дракон Льда всё заморозил', `<p>Давление дошло до предела. Лёд ${w('ice','закрылся','закрылась')} наглухо: телефон выключен, «мне нужно побыть ${w('ice','одному','одной')}».</p><p>В разборе видно, какие ходы кормили дракона Льда и что могло его успокоить.</p>`],
+  lose: () => ['Затишье', `<p>${MAX_ROUNDS} раундов прошли без ссоры, но и без примирения. Драконы не сорвались, но и не уснули.</p><p>В разборе видно, что мешало договориться.</p>`]
+};
 function showEnd(){
   const g = App.game; if (!g || !g.done) return;
   FINALE_WIN = g.outcome === 'win';
-  $('finTitle').textContent = FINALE_WIN ? 'Драконы уснули' : 'Драконы не уснули';
-  $('finText').innerHTML = FINALE_WIN
-    ? SCX.finale()
-    : `<p>За ${MAX_ROUNDS} раундов драконы так и не успокоились.</p><p>Посмотрите разбор ниже: там видно, что чувствовал каждый.</p>`;
-  $('finale').hidden = false;
+  if (g.outcome === 'boil' && BOIL_SIDE !== g.boil){ BOIL_SIDE = g.boil; BOIL_T = performance.now()/1000; }
+  const [title, text] = END_TEXT[g.outcome === 'boil' ? 'boil_' + g.boil : g.outcome] ();
+  $('finale').className = 'finale ' + (g.outcome === 'boil' ? 'boil ' + g.boil : g.outcome);
+  $('finTitle').textContent = title;
+  $('finText').innerHTML = text;
+  /* let the boiling point play out on the scene before the card covers it */
+  if (g.outcome === 'boil' && !reduce && performance.now()/1000 - BOIL_T < 1.5){ $('finale').hidden = true; later(() => { if (App.game && App.game.done) $('finale').hidden = false; }, 1900); }
+  else $('finale').hidden = false;
 }
 function esc(t){ return String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 $('again').addEventListener('click', rematch);
@@ -1321,6 +1350,7 @@ const curHero = {fire:'', ice:''};
 function heroState(side){ const l = V[side]; return l < 30 ? 'calm' : l < 60 ? 'tense' : 'peak'; }
 function stateName(side){
   const l = V[side], g = App.game;
+  if (l >= EDGE) return {t:'на грани', edge:true};
   if (g && g.key[side] && l >= 6 && l < 60) return {t:'восстановление', rec:true};
   if (l < 30) return {t:'спокойствие'};
   if (l < 60) return {t: side==='fire' ? 'тревога' : 'раздражение'};
@@ -1344,6 +1374,7 @@ function drawStatus(){
     const se = $('st-'+side); se.textContent = n.t; se.classList.toggle('rec', !!n.rec);
     $('fill-'+side).style.width = V[side].toFixed(1) + '%';
     $('hud-'+side).classList.toggle('me', side === ME);
+    $('hud-'+side).classList.toggle('edge', !!n.edge);
   }
 }
 const HEAD = {fire:{x:250, y:82}, ice:{x:550, y:82}};
@@ -1365,7 +1396,10 @@ function renderTurnIdle(){
   const g = App.game; setSpot(null);
   if (!g || g.done || !phaseOpen()) return setTurn('');
   if (journalRound()) return setTurn('Запишите, что почувствовали');
-  if (!g.picks[ME]) return setTurn('Твой ход', ME, true);
+  if (!g.picks[ME]){
+    const e = SIDES.filter(s => V[s] >= EDGE).sort((a,b) => V[b] - V[a])[0];
+    return setTurn(e ? (CW < 560 ? `Твой ход · ${NAME[e]} на грани` : `Твой ход · дракон ${GEN[e]} на грани`) : 'Твой ход', e || ME, true);
+  }
   setTurn(`Ждём ход ${GEN[OTHER[ME]]}…`, OTHER[ME]);
 }
 function hudBottom(){ const h = $('hud-fire'); return h ? h.offsetTop + h.offsetHeight : 50; }
@@ -2000,7 +2034,7 @@ function drawLandingFrame(dt, t){
     if (L.hero[side] !== st){ $('lh-'+side).innerHTML = heroSVG(side, L.G[side], s.hero[side]); L.hero[side] = st; }
   }
   $('lsvg').setAttribute('viewBox', `${(cam.cx - cam.vw/2).toFixed(2)} ${(cam.cy - cam.vh/2).toFixed(2)} ${cam.vw.toFixed(2)} ${cam.vh.toFixed(2)}`);
-  const sv = {ctx, bctx, parts, DPR, CW, CH, SC, OX, OY, sf:shown.fire, si:shown.ice, fw:FINALE_WIN};
+  const sv = {ctx, bctx, parts, DPR, CW, CH, SC, OX, OY, sf:shown.fire, si:shown.ice, fw:FINALE_WIN, bo:BOIL_SIDE}; BOIL_SIDE = '';
   bctx = L.ctxB; ctx = L.ctxF; parts = L.parts; DPR = L.dpr; CW = L.W; CH = L.H;
   SC = cam.sc; OX = cam.ox; OY = cam.oy; PARX = d => lCamera(s, d);
   shown.fire = s.kf*100; shown.ice = s.ki*100; FINALE_WIN = s.win;
@@ -2019,7 +2053,7 @@ function drawLandingFrame(dt, t){
   } finally {
     PARX = null;
     ctx = sv.ctx; bctx = sv.bctx; parts = sv.parts; DPR = sv.DPR; CW = sv.CW; CH = sv.CH; SC = sv.SC; OX = sv.OX; OY = sv.OY;
-    shown.fire = sv.sf; shown.ice = sv.si; FINALE_WIN = sv.fw;
+    shown.fire = sv.sf; shown.ice = sv.si; FINALE_WIN = sv.fw; BOIL_SIDE = sv.bo;
   }
 }
 function lScrollTo(i){
@@ -2175,7 +2209,11 @@ function dgeo(side, l, t){
   const k = l/100, f = FEET[side], ph = side === 'ice' ? 1.3 : 0;
   const bob = reduce ? 0 : Math.sin(t*1.7 + ph)*(5 + 6*k);
   const drift = reduce ? 0 : Math.sin(t*0.6 + ph)*(6 + 8*k);
-  return {k, dir:f.dir, s:0.34 + 0.48*k, x:f.x + f.dir*(lunge[side]*26 + drift), y:150 - k*28 + bob, t};
+  /* on the edge the dragon strains and shakes; after the boiling point it breaks loose and grows */
+  const edge = reduce ? 0 : Math.max(0, (l - EDGE)/(100 - EDGE));
+  const loose = BOIL_SIDE === side ? Math.min(1, (t - BOIL_T)/1.2) : 0;
+  const jx = Math.sin(t*37)*3*edge, jy = Math.cos(t*29)*2*edge;
+  return {k, dir:f.dir, s:0.34 + 0.48*k + 0.22*loose, x:f.x + f.dir*(lunge[side]*26 + drift - 40*loose) + jx, y:150 - k*28 + bob + jy - 30*loose, t};
 }
 const dpt = (g, lx, ly) => ({x:g.x + g.dir*(lx - 150)*g.s, y:g.y + (ly - 100)*g.s});
 function babyPos(side, t){
@@ -2327,6 +2365,7 @@ function drawAmbient(){
 }
 const LEASH = {fire:{x:204, y:262}, ice:{x:596, y:262}};
 function drawLeash(side, t){
+  if (BOIL_SIDE === side) return;
   const h = LEASH[side], l = shown[side], k = l/100;
   let p;
   if (l < 6){ const b = babyPos(side, t); p = {x:b.x, y:b.y + 14}; }
@@ -2375,6 +2414,33 @@ function drawFinale(){
 }
 
 
+/* boiling point: fire floods the scene with heat, ice covers it with frost */
+function drawBoil(t){
+  if (!BOIL_SIDE) return;
+  const u = Math.min(1, (t - BOIL_T)/1.6), fire = BOIL_SIDE === 'fire';
+  ctx.save(); ctx.setTransform(DPR,0,0,DPR,0,0);
+  if (fire){
+    const fl = reduce ? 0 : Math.sin(t*9)*0.04 + Math.sin(t*23)*0.03;
+    const g = ctx.createLinearGradient(0, CH, 0, 0);
+    g.addColorStop(0, `rgba(255,70,30,${(0.42 + fl)*u})`); g.addColorStop(0.55, `rgba(255,120,50,${0.16*u})`); g.addColorStop(1, 'rgba(255,90,40,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, CW, CH);
+  } else {
+    const r = Math.max(CW, CH);
+    const g = ctx.createRadialGradient(CW/2, CH*0.55, r*(0.62 - 0.32*u), CW/2, CH*0.55, r*0.8);
+    g.addColorStop(0, 'rgba(210,240,255,0)'); g.addColorStop(1, `rgba(215,240,255,${0.62*u})`);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, CW, CH);
+    ctx.fillStyle = `rgba(150,210,255,${0.12*u})`; ctx.fillRect(0, 0, CW, CH);
+  }
+  ctx.restore();
+  if (reduce) return;
+  const f = FEET[BOIL_SIDE];
+  for (let i = 0; i < 3; i++){
+    if (fire){ emit(Math.random() < .5 ? 'ember' : 'spark', Math.random()*800, 300 + Math.random()*40, Math.random() < .5 ? '#ff7a3c' : '#ffc06b'); }
+    else emit(Math.random() < .3 ? 'shard' : 'snow', Math.random()*800, Math.random()*60, Math.random() < .5 ? '#e6f6ff' : '#9fdcff');
+  }
+  if (fire && Math.random() < 0.25) emit('burst', f.x + (Math.random()-.5)*120, 120 + Math.random()*80, '#ff6a3c');
+}
+
 /* ---------- render loop + routing ---------- */
 let last = performance.now();
 function frame(now){
@@ -2393,6 +2459,7 @@ function frame(now){
     drawLeash('fire', t); drawLeash('ice', t);
     drawDragon('fire', shown.fire, t); drawDragon('ice', shown.ice, t);
     drawParts(dt); drawRings(dt, t); drawShots(dt, t); drawFloats(dt);
+    drawBoil(t);
   }
   requestAnimationFrame(frame);
 }
